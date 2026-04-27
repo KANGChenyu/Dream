@@ -1,34 +1,40 @@
-# DreamLog Web MVP Design
+# DreamLog Web MVP 设计文档
 
-## Goal
+## 目标
 
-Build the first visible DreamLog product experience as a Web MVP. The project currently has product documentation and a FastAPI backend skeleton, but no user-facing application. This MVP creates `dreamlog-frontend/` so a user can open a browser, log in, record dreams, and review saved dreams.
+先做出 DreamLog 的第一个可见产品体验。当前项目已经有产品规划文档和 FastAPI 后端骨架，但还没有用户真正能打开、能操作的前端应用。本次 MVP 会新增 `dreamlog-frontend/`，让用户可以在浏览器里登录、记录梦境、查看自己的梦境列表和详情。
 
-The design follows the visual standard in `Dream.png`: dark starry dreamscape, purple-blue lighting, glassmorphism panels, immersive center composition, and floating AI/community panels. The app should feel like an AI dream journal, not an admin dashboard.
+视觉标准以根目录的 `Dream.png` 为准：暗色星空、紫蓝梦境光感、玻璃拟态卡片、中心沉浸式构图、两侧漂浮功能面板。整体要像一个 AI 梦境日志产品，而不是普通后台管理页面。
 
-## First Slice
+## 第一版范围
 
-The first slice is a personal dream journaling tool:
+第一版先做“个人记梦工具”闭环：
 
-- Phone verification login using the existing backend development SMS flow.
-- Dream entry form with content, dream date, mood, clarity, lucid dream flag, public flag, and anonymous flag.
-- My dreams list with date, mood, title/content preview, and public/private state.
-- Dream detail view with full dream metadata.
-- AI interpretation and dream image areas shown as premium/coming-soon panels or disabled entry points until mock/real AI is connected.
+- 手机号验证码登录，使用现有后端的开发模式短信验证码流程。
+- 梦境记录表单：梦境内容、日期、情绪、清晰度、是否清醒梦、是否公开、是否匿名。
+- 我的梦境列表：展示日期、情绪、标题或内容摘要、公开/私密状态。
+- 梦境详情页：展示完整梦境内容和元数据。
+- AI 解读和 AI 绘梦区域先作为“即将接入”或禁用入口展示，保留视觉位置，但不阻塞第一版可用性。
 
-Out of scope for the first slice:
+第一版暂不做：
 
-- Community feed UI.
-- Share card generation.
-- Real AI interpretation or image generation.
-- WeChat mini-program.
-- Payment, membership, reports, statistics, and dream map.
+- 社区广场。
+- 分享卡片生成。
+- 真实 AI 解读或 AI 绘图。
+- 微信小程序。
+- 支付、会员、报告、统计、梦境地图等高级功能。
 
-## Technical Direction
+## 技术方向
 
-Create a Vite + React + TypeScript app under `dreamlog-frontend/`.
+在项目根目录新增 `dreamlog-frontend/`，使用：
 
-Use the existing FastAPI backend at `http://localhost:8000`:
+- Vite
+- React
+- TypeScript
+
+前端调用现有 FastAPI 后端，默认后端地址为 `http://localhost:8000`。
+
+需要接入的接口：
 
 - `POST /api/v1/auth/sms/send`
 - `POST /api/v1/auth/login/phone`
@@ -39,88 +45,88 @@ Use the existing FastAPI backend at `http://localhost:8000`:
 - `PUT /api/v1/dreams/{dream_id}`
 - `DELETE /api/v1/dreams/{dream_id}`
 
-Store the access token in local storage for the MVP. Wrap API calls in a small client module that attaches `Authorization: Bearer <token>`.
+MVP 阶段将 access token 存到 localStorage。前端封装一个轻量 API client，统一附加 `Authorization: Bearer <token>`。
 
-Use client-side routing. The initial route structure:
+初始路由：
 
-- `/login`
-- `/` for the main journal workspace
-- `/dreams/:id` for dream details
+- `/login`：手机号验证码登录页。
+- `/`：主工作台，记录梦境 + 我的梦境列表。
+- `/dreams/:id`：梦境详情页。
 
-## Visual System
+## 视觉系统
 
-The UI should echo `Dream.png`:
+界面要贴近 `Dream.png`：
 
-- Full-screen dark cosmic background with purple/blue highlights.
-- Large atmospheric title treatment for the first screen.
-- Glass panels with translucent borders, soft blur, subtle glow, and compact content.
-- Central dream entry area as the main interaction.
-- Side panels for dream list, keywords, AI interpretation teaser, and mood insights.
-- Responsive layout that collapses into a stacked mobile view.
+- 全屏暗色宇宙/梦境背景，带紫蓝光晕。
+- 首屏有明显的 DreamLog / AI 梦境日志气质。
+- 使用半透明玻璃面板、细边框、模糊、柔光、轻微发光效果。
+- 中心区域承载“记录梦境”的核心交互。
+- 侧边面板承载梦境列表、关键词、AI 解读入口、情绪洞察等信息。
+- 移动端自动堆叠，不能出现文字重叠或面板挤压。
 
-Avoid a plain white SaaS dashboard style. Avoid a marketing-only landing page. The first screen should be usable as the journal workspace.
+不要做成白底 SaaS 工具页。不要只做营销落地页。第一屏必须能直接开始记录梦境。
 
-## Data Flow
+## 数据流程
 
-Login:
+登录流程：
 
-1. User enters phone number.
-2. Frontend calls `/auth/sms/send`.
-3. In development, backend returns `debug_code`.
-4. Frontend lets the user enter or auto-fill the code if returned.
-5. Frontend calls `/auth/login/phone`.
-6. Store token and user, then route to `/`.
+1. 用户输入手机号。
+2. 前端调用 `/auth/sms/send`。
+3. 开发环境后端返回 `debug_code`。
+4. 前端允许用户填写验证码；如果接口返回了 `debug_code`，可以辅助显示或自动填入。
+5. 前端调用 `/auth/login/phone`。
+6. 保存 token 和用户信息，进入 `/` 主工作台。
 
-Dream creation:
+创建梦境流程：
 
-1. User fills the dream form.
-2. Frontend validates minimum content length and required date.
-3. Frontend calls `POST /dreams`.
-4. On success, refresh list and show the created dream detail/preview.
+1. 用户填写梦境内容和相关字段。
+2. 前端校验梦境内容长度和日期。
+3. 前端调用 `POST /dreams`。
+4. 创建成功后刷新梦境列表，并展示刚创建的梦境。
 
-Dream list/detail:
+列表和详情流程：
 
-1. Main workspace loads `GET /dreams`.
-2. Selecting a dream opens `/dreams/:id`.
-3. Detail page calls `GET /dreams/{id}`.
+1. 主工作台加载时调用 `GET /dreams`。
+2. 用户点击某条梦境，进入 `/dreams/:id`。
+3. 详情页调用 `GET /dreams/{id}` 获取完整数据。
 
-## Error Handling
+## 错误处理
 
-- Show inline validation for phone, code, dream content, and date.
-- If login fails, keep the form state and show a short error.
-- If API is unreachable, show a clear backend connection message.
-- If token is invalid, clear auth state and return to login.
-- If dream list is empty, show an inviting empty state that encourages first entry.
+- 手机号、验证码、梦境内容、日期都要有表单校验。
+- 登录失败时保留用户输入，并显示简短错误提示。
+- 后端无法连接时，展示明确的“后端服务未连接”提示。
+- token 失效时清空登录状态并回到登录页。
+- 梦境列表为空时，展示鼓励用户写下第一个梦的空状态。
 
-## Backend Assumptions
+## 后端前提
 
-The backend may need small fixes before the frontend can work end to end:
+后端可能还需要为了前端 MVP 做少量补齐：
 
-- Dependencies must be installed or Docker must be used.
-- Database tables must exist.
-- CORS already includes `http://localhost:5173`.
-- Development SMS returns `debug_code`.
+- 本地依赖需要安装，或者使用 Docker 运行。
+- 数据库表需要能创建。
+- CORS 已包含 `http://localhost:5173`。
+- 开发环境短信接口会返回 `debug_code`。
 
-If the backend cannot persist data yet, implementation should add the minimum backend migration/init path needed for the Web MVP.
+如果后端暂时不能持久化数据，实现阶段应补上最小可用的数据库初始化或迁移方案，确保 Web MVP 能跑通。
 
-## Testing And Verification
+## 验证标准
 
-Verification should include:
+完成后需要验证：
 
-- Frontend starts on `http://localhost:5173`.
-- Login flow works against local backend.
-- Creating a dream persists it.
-- Dream list shows the created dream.
-- Dream detail renders correct data.
-- Browser verification at desktop and mobile widths confirms no overlapping text or broken panels.
+- 前端可以在 `http://localhost:5173` 启动。
+- 手机号验证码登录能连接本地后端。
+- 创建梦境后能持久化。
+- 我的梦境列表能显示刚创建的梦。
+- 梦境详情页能显示正确数据。
+- 桌面端和移动端浏览器检查无文字重叠、无面板错位、无明显视觉破碎。
 
-## Implementation Plan Preview
+## 实施计划预览
 
-1. Prepare backend local run path and confirm API availability.
-2. Scaffold `dreamlog-frontend/` with Vite + React + TypeScript.
-3. Build API client and auth state.
-4. Build Dream.png-inspired visual shell.
-5. Build login flow.
-6. Build dream form, list, and detail views.
-7. Add loading, empty, error, and unauthorized states.
-8. Verify in browser and fix responsive issues.
+1. 确认后端本地运行方式和 API 可用性。
+2. 创建 `dreamlog-frontend/`，初始化 Vite + React + TypeScript。
+3. 实现 API client 和登录状态管理。
+4. 实现符合 `Dream.png` 氛围的暗色梦境视觉外壳。
+5. 实现手机号验证码登录。
+6. 实现梦境记录表单、我的梦境列表、梦境详情页。
+7. 补齐 loading、empty、error、unauthorized 状态。
+8. 用浏览器验证桌面端和移动端布局，并修正响应式问题。
