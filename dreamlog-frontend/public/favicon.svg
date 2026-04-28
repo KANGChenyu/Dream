@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="sky" cx="32" cy="22" r="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8fe7ff" />
+      <stop offset="0.42" stop-color="#a977ff" />
+      <stop offset="1" stop-color="#050616" />
+    </radialGradient>
+    <linearGradient id="moon" x1="20" x2="44" y1="18" y2="46" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff8ff" />
+      <stop offset="1" stop-color="#d6ccff" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#sky)" />
+  <path d="M43 39.5A18 18 0 0 1 25.8 16a20 20 0 1 0 22.7 22.7c-1.8.5-3.7.8-5.5.8Z" fill="url(#moon)" />
+  <circle cx="45" cy="19" r="2" fill="#fff8ff" opacity=".9" />
+  <circle cx="18" cy="42" r="1.6" fill="#8fe7ff" opacity=".85" />
+</svg>
