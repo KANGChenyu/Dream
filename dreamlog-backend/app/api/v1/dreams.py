@@ -4,7 +4,7 @@
 from datetime import date
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
 
@@ -140,7 +140,6 @@ async def delete_dream(
 @router.post("/{dream_id}/interpret", response_model=DreamResponse)
 async def interpret_dream(
     dream_id: int,
-    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -153,12 +152,20 @@ async def interpret_dream(
         raise HTTPException(status_code=404, detail="梦境不存在")
 
     # 调用 AI 解读
+    if dream.interpretation:
+        return DreamResponse.model_validate(dream)
+
     interpreter = get_interpreter()
-    interpret_result = await interpreter.interpret(
-        dream_content=dream.content,
-        mood=dream.mood,
-        clarity=dream.clarity,
-    )
+    try:
+        interpret_result = await interpreter.interpret(
+            dream_content=dream.content,
+            mood=dream.mood,
+            clarity=dream.clarity,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="AI 解读服务暂时不可用，请稍后重试。") from exc
 
     # 保存解读结果
     interpretation = DreamInterpretation(
@@ -182,11 +189,6 @@ async def interpret_dream(
     for keyword in interpret_result.keywords:
         tag = DreamTag(dream_id=dream.id, tag=keyword)
         db.add(tag)
-
-    # 后台生成向量嵌入（用于撞梦匹配）
-    background_tasks.add_default_task(
-        _generate_embedding, dream.id, dream.content, db
-    )
 
     await db.flush()
     await db.refresh(dream)

@@ -59,6 +59,10 @@ class Settings(BaseSettings):
     openai_api_key: Optional[str] = None
     openai_model: str = "gpt-4o"
 
+    deepseek_api_key: Optional[str] = None
+    deepseek_base_url: str = "https://api.deepseek.com"
+    deepseek_model: str = "deepseek-v4-flash"
+
     ai_image_provider: str = "dalle"  # dalle / stable_diffusion
     dalle_api_key: Optional[str] = None
 
