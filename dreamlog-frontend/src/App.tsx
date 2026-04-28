@@ -5,14 +5,16 @@ import {
   Routes,
   useInRouterContext
 } from "react-router-dom";
+import type { ReactNode } from "react";
 
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { LoginPage } from "./auth/LoginPage";
+import { DreamDetailPage } from "./dreams/DreamDetailPage";
 import { DreamWorkspace } from "./dreams/DreamWorkspace";
 
-function ProtectedHome() {
+function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <DreamWorkspace /> : <Navigate replace to="/login" />;
+  return isAuthenticated ? children : <Navigate replace to="/login" />;
 }
 
 function LoginRoute() {
@@ -25,7 +27,22 @@ function AppRoutes() {
     <AuthProvider>
       <Routes>
         <Route element={<LoginRoute />} path="/login" />
-        <Route element={<ProtectedHome />} path="/" />
+        <Route
+          element={
+            <ProtectedRoute>
+              <DreamWorkspace />
+            </ProtectedRoute>
+          }
+          path="/"
+        />
+        <Route
+          element={
+            <ProtectedRoute>
+              <DreamDetailPage />
+            </ProtectedRoute>
+          }
+          path="/dreams/:id"
+        />
         <Route element={<Navigate replace to="/" />} path="*" />
       </Routes>
     </AuthProvider>
