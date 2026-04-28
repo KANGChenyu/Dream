@@ -19,6 +19,8 @@ export function DreamDetailPage() {
   const [dream, setDream] = useState<DreamResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [interpretError, setInterpretError] = useState("");
+  const [isInterpreting, setIsInterpreting] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -83,6 +85,24 @@ export function DreamDetailPage() {
   }
 
   const tags = dream.tags.map((item) => item.tag).filter(Boolean);
+  const keywords = dream.interpretation?.keywords.length ? dream.interpretation.keywords : tags;
+
+  const handleInterpret = async () => {
+    if (!id) {
+      return;
+    }
+
+    setIsInterpreting(true);
+    setInterpretError("");
+    try {
+      const response = await api.post<DreamResponse>(`/dreams/${id}/interpret`);
+      setDream(response);
+    } catch (err) {
+      setInterpretError(err instanceof Error ? err.message : "AI 解读生成失败，请稍后重试。");
+    } finally {
+      setIsInterpreting(false);
+    }
+  };
 
   return (
     <main className="app-shell dream-detail-shell">
@@ -144,10 +164,47 @@ export function DreamDetailPage() {
 
         <aside className="dream-detail-side" aria-label="AI 梦境辅助面板">
           <GlassPanel title="AI 梦境解析">
-            <div className="detail-placeholder-panel">
-              <Brain aria-hidden="true" className="panel-icon" />
-              <p>心理学、象征意义与文化视角的解析将在后续版本接入。当前先为这段梦境保留解析位置。</p>
-            </div>
+            {dream.interpretation ? (
+              <div className="interpretation-panel">
+                <p className="interpretation-summary">{dream.interpretation.summary}</p>
+                <section>
+                  <h3>心理学解读</h3>
+                  <p>{dream.interpretation.psychology}</p>
+                </section>
+                <section>
+                  <h3>象征意义</h3>
+                  <p>{dream.interpretation.symbolism}</p>
+                </section>
+                <section>
+                  <h3>文化视角</h3>
+                  <p>{dream.interpretation.cultural}</p>
+                </section>
+                {dream.interpretation.advice ? (
+                  <section>
+                    <h3>梦境建议</h3>
+                    <p>{dream.interpretation.advice}</p>
+                  </section>
+                ) : null}
+              </div>
+            ) : (
+              <div className="detail-placeholder-panel">
+                <Brain aria-hidden="true" className="panel-icon" />
+                <p>基于产品文档中的梦境解读 Prompt，调用 DeepSeek 生成心理学、象征意义与文化视角报告。</p>
+                {interpretError ? (
+                  <p className="form-error" role="alert">
+                    {interpretError}
+                  </p>
+                ) : null}
+                <button
+                  className="secondary-action"
+                  disabled={isInterpreting}
+                  onClick={handleInterpret}
+                  type="button"
+                >
+                  {isInterpreting ? "生成中..." : "生成 AI 解读"}
+                </button>
+              </div>
+            )}
           </GlassPanel>
 
           <GlassPanel title="AI 绘梦">
@@ -161,7 +218,7 @@ export function DreamDetailPage() {
             <div className="detail-placeholder-panel">
               <Sparkles aria-hidden="true" className="panel-icon" />
               <div className="chip-row" aria-label="梦境关键词">
-                {(tags.length > 0 ? tags : placeholderTags).map((tag) => (
+                {(keywords.length > 0 ? keywords : placeholderTags).map((tag) => (
                   <span key={tag}>{tag}</span>
                 ))}
               </div>
