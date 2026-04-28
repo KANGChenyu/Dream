@@ -32,13 +32,11 @@ export function DreamWorkspace() {
   }, [loadDreams]);
 
   const createDream = async (payload: DreamCreateRequest) => {
-    setError("");
     try {
       await api.post<DreamResponse>("/dreams", { ...payload });
       await loadDreams();
     } catch (err) {
       const message = err instanceof Error ? err.message : "梦境创建失败，请稍后重试。";
-      setError(message);
       throw new Error(message);
     }
   };

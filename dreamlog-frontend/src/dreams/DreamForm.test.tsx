@@ -52,4 +52,30 @@ describe("DreamForm", () => {
       is_anonymous: false
     });
   });
+
+  it("defaults the dream date from the local calendar day", () => {
+    vi.setSystemTime(new Date("2026-04-27T16:30:00.000Z"));
+
+    render(<DreamForm onCreate={vi.fn()} />);
+
+    expect(screen.getByLabelText("梦境日期")).toHaveValue("2026-04-28");
+  });
+
+  it("does not submit when the dream date is empty", async () => {
+    const user = userEvent.setup();
+    const onCreate = vi.fn().mockResolvedValue(undefined);
+
+    render(<DreamForm onCreate={onCreate} />);
+    vi.useRealTimers();
+
+    await user.type(
+      screen.getByLabelText("梦境内容"),
+      "我穿过一座被月光照亮的花园，发现了一扇蓝色的门。"
+    );
+    await user.clear(screen.getByLabelText("梦境日期"));
+    await user.click(screen.getByRole("button", { name: "保存梦境" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("请选择梦境日期");
+    expect(onCreate).not.toHaveBeenCalled();
+  });
 });

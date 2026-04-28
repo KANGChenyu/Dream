@@ -8,7 +8,12 @@ interface DreamFormProps {
 }
 
 function getToday() {
-  return new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 export function DreamForm({ onCreate }: DreamFormProps) {
@@ -29,6 +34,11 @@ export function DreamForm({ onCreate }: DreamFormProps) {
     const trimmedContent = content.trim();
     if (trimmedContent.length < 10) {
       setError("梦境内容至少需要 10 个字符。");
+      return;
+    }
+
+    if (!dreamDate) {
+      setError("请选择梦境日期。");
       return;
     }
 
@@ -57,7 +67,7 @@ export function DreamForm({ onCreate }: DreamFormProps) {
   };
 
   return (
-    <form className="dream-form" onSubmit={handleSubmit}>
+    <form className="dream-form" noValidate onSubmit={handleSubmit}>
       <label className="dream-form__field dream-form__field--content">
         <span>梦境内容</span>
         <textarea
@@ -75,6 +85,7 @@ export function DreamForm({ onCreate }: DreamFormProps) {
           <input
             name="dream_date"
             onChange={(event) => setDreamDate(event.target.value)}
+            required
             type="date"
             value={dreamDate}
           />
