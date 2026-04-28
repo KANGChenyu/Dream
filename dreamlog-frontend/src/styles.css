@@ -42,7 +42,9 @@ body {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -55,8 +57,7 @@ button:disabled {
   opacity: 0.62;
 }
 
-button:focus-visible,
-input:focus-visible {
+:where(button, input, select, textarea, a[href], .ghost-button):focus-visible {
   outline: 3px solid rgba(143, 231, 255, 0.85);
   outline-offset: 3px;
 }
@@ -149,9 +150,7 @@ input:focus-visible {
 }
 
 .glass-panel,
-.auth-panel,
-.workspace-panel,
-.dream-card {
+.auth-panel {
   position: relative;
   border: 1px solid var(--dream-line);
   border-radius: var(--panel-radius);
@@ -163,9 +162,7 @@ input:focus-visible {
 }
 
 .glass-panel::before,
-.auth-panel::before,
-.workspace-panel::before,
-.dream-card::before {
+.auth-panel::before {
   position: absolute;
   inset: 0;
   border-radius: inherit;
@@ -346,31 +343,6 @@ input:focus-visible {
   background: rgba(96, 20, 68, 0.32);
 }
 
-.workspace-shell {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  width: min(100%, 1180px);
-  gap: 24px;
-  margin: 0 auto;
-}
-
-.workspace-grid {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.workspace-panel {
-  grid-column: span 6;
-  min-width: 0;
-  padding: clamp(18px, 2.5vw, 28px);
-}
-
-.dream-card {
-  padding: 18px;
-}
-
 @media (max-width: 760px) {
   .app-shell {
     padding: 22px;
@@ -392,14 +364,6 @@ input:focus-visible {
   .code-row button {
     width: 100%;
   }
-
-  .workspace-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .workspace-panel {
-    grid-column: auto;
-  }
 }
 
 @media (max-width: 420px) {
@@ -412,18 +376,14 @@ input:focus-visible {
   }
 
   .glass-panel,
-  .auth-panel,
-  .workspace-panel,
-  .dream-card {
+  .auth-panel {
     border-radius: 18px;
   }
 }
 
 @supports not (backdrop-filter: blur(1px)) {
   .glass-panel,
-  .auth-panel,
-  .workspace-panel,
-  .dream-card {
+  .auth-panel {
     background: var(--dream-surface-strong);
   }
 }
