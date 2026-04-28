@@ -1,0 +1,47 @@
+:root {
+  color: #f7f2ff;
+  background: #08091c;
+  font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+.app-shell {
+  min-height: 100vh;
+  padding: 48px;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(138, 99, 255, 0.45), transparent 32%),
+    radial-gradient(circle at 18% 20%, rgba(75, 137, 255, 0.22), transparent 28%),
+    linear-gradient(180deg, #060817 0%, #12143a 52%, #070818 100%);
+}
+
+.hero-title {
+  max-width: 920px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.hero-title h1 {
+  margin: 0;
+  font-size: clamp(44px, 7vw, 92px);
+  line-height: 1.05;
+  letter-spacing: 0;
+  text-shadow: 0 0 32px rgba(175, 143, 255, 0.75);
+}
+
+.hero-title p {
+  color: #ddd4ff;
+}
+
+.eyebrow {
+  color: #b99bff;
+  font-weight: 700;
+}
