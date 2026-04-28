@@ -2,7 +2,7 @@ import { Brain, Brush, CalendarDays, Eye, Lock, Moon, Sparkles } from "lucide-re
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
-import { api } from "../api/client";
+import { api, apiBaseUrl } from "../api/client";
 import type { DreamResponse } from "../api/types";
 import { GlassPanel } from "../components/GlassPanel";
 import { StatusMessage } from "../components/StatusMessage";
@@ -14,6 +14,15 @@ function getDreamTitle(dream: DreamResponse) {
   return dream.title ?? dream.content.slice(0, 32);
 }
 
+function resolveImageUrl(imageUrl: string) {
+  if (imageUrl.startsWith("data:") || /^https?:\/\//.test(imageUrl)) {
+    return imageUrl;
+  }
+
+  const apiOrigin = new URL(apiBaseUrl).origin;
+  return `${apiOrigin}${imageUrl}`;
+}
+
 export function DreamDetailPage() {
   const { id } = useParams();
   const [dream, setDream] = useState<DreamResponse | null>(null);
@@ -21,6 +30,8 @@ export function DreamDetailPage() {
   const [error, setError] = useState("");
   const [interpretError, setInterpretError] = useState("");
   const [isInterpreting, setIsInterpreting] = useState(false);
+  const [imageError, setImageError] = useState("");
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -101,6 +112,25 @@ export function DreamDetailPage() {
       setInterpretError(err instanceof Error ? err.message : "AI 解读生成失败，请稍后重试。");
     } finally {
       setIsInterpreting(false);
+    }
+  };
+
+  const handleGenerateImage = async () => {
+    if (!id) {
+      return;
+    }
+
+    setIsGeneratingImage(true);
+    setImageError("");
+    try {
+      const response = await api.post<DreamResponse>(`/dreams/${id}/generate-image`, {
+        style: "surreal_dreamlike"
+      });
+      setDream(response);
+    } catch (err) {
+      setImageError(err instanceof Error ? err.message : "AI 绘梦生成失败，请稍后重试。");
+    } finally {
+      setIsGeneratingImage(false);
     }
   };
 
@@ -208,10 +238,37 @@ export function DreamDetailPage() {
           </GlassPanel>
 
           <GlassPanel title="AI 绘梦">
-            <div className="detail-placeholder-panel">
-              <Brush aria-hidden="true" className="panel-icon" />
-              <p>梦境画面生成入口即将开放，未来可以把这段记录转化为专属视觉图像。</p>
-            </div>
+            {dream.image_url ? (
+              <div className="dream-image-panel">
+                <img alt="AI 生成的梦境画面" src={resolveImageUrl(dream.image_url)} />
+                <button
+                  className="secondary-action"
+                  disabled={isGeneratingImage}
+                  onClick={handleGenerateImage}
+                  type="button"
+                >
+                  {isGeneratingImage ? "生成中..." : "重新生成"}
+                </button>
+              </div>
+            ) : (
+              <div className="detail-placeholder-panel">
+                <Brush aria-hidden="true" className="panel-icon" />
+                <p>把这段梦境转化为一张柔和、超现实的专属视觉图像。</p>
+                {imageError ? (
+                  <p className="form-error" role="alert">
+                    {imageError}
+                  </p>
+                ) : null}
+                <button
+                  className="secondary-action"
+                  disabled={isGeneratingImage}
+                  onClick={handleGenerateImage}
+                  type="button"
+                >
+                  {isGeneratingImage ? "生成中..." : "生成梦境画面"}
+                </button>
+              </div>
+            )}
           </GlassPanel>
 
           <GlassPanel title="关键词">

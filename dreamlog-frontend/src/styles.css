@@ -842,6 +842,26 @@ button:disabled {
   line-height: 1.65;
 }
 
+.dream-image-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.dream-image-panel img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(214, 204, 255, 0.2);
+  border-radius: 18px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 18px 48px rgba(5, 6, 22, 0.38);
+}
+
+.dream-image-panel .secondary-action {
+  margin-top: 0;
+}
+
 .interpretation-panel {
   display: grid;
   gap: 14px;

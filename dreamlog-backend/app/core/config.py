@@ -57,14 +57,18 @@ class Settings(BaseSettings):
     claude_model: str = "claude-sonnet-4-20250514"
 
     openai_api_key: Optional[str] = None
+    openai_base_url: Optional[str] = None
     openai_model: str = "gpt-4o"
+    openai_image_model: str = "gpt-image-1.5"
 
     deepseek_api_key: Optional[str] = None
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_model: str = "deepseek-v4-flash"
 
-    ai_image_provider: str = "dalle"  # dalle / stable_diffusion
+    ai_image_provider: str = "dalle"  # openai / dalle / stable_diffusion
     dalle_api_key: Optional[str] = None
+    generated_image_dir: str = "storage/generated-images"
+    generated_image_url_prefix: str = "/generated-images"
 
     sd_api_url: str = "http://localhost:7860"
     sd_model: str = "dreamshaper_8"

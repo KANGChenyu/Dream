@@ -3,9 +3,11 @@ DreamLog — AI 梦境日志与解析社区
 FastAPI 应用入口
 """
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.core.config import get_settings
 from app.api.v1.auth import router as auth_router
@@ -13,6 +15,7 @@ from app.api.v1.dreams import router as dreams_router
 from app.api.v1.community import router as community_router
 
 settings = get_settings()
+Path(settings.generated_image_dir).mkdir(parents=True, exist_ok=True)
 
 
 @asynccontextmanager
@@ -39,7 +42,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",      # Next.js 开发
+        "http://127.0.0.1:3000",      # Next.js 开发
         "http://localhost:5173",      # Vite 开发
+        "http://127.0.0.1:5173",      # Vite 开发
         "https://dreamlog.app",       # 生产域名
     ],
     allow_credentials=True,
@@ -51,6 +56,11 @@ app.add_middleware(
 app.include_router(auth_router, prefix=settings.api_v1_prefix)
 app.include_router(dreams_router, prefix=settings.api_v1_prefix)
 app.include_router(community_router, prefix=settings.api_v1_prefix)
+app.mount(
+    settings.generated_image_url_prefix,
+    StaticFiles(directory=settings.generated_image_dir),
+    name="generated-images",
+)
 
 
 @app.get("/")

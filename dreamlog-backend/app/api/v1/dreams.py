@@ -2,12 +2,15 @@
 梦境 CRUD + AI 解读/绘图 API
 """
 from datetime import date
+from pathlib import Path
 from typing import Optional
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
 
+from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.user import User
@@ -18,7 +21,24 @@ from app.schemas.dream import (
 )
 from app.services.ai import get_interpreter, get_image_generator
 
+settings = get_settings()
 router = APIRouter(prefix="/dreams", tags=["梦境"])
+
+
+async def _persist_generated_image(
+    dream_id: int,
+    image_data: bytes,
+    storage_dir: str | Path | None = None,
+) -> str:
+    if not image_data:
+        raise RuntimeError("AI 绘梦服务没有返回可保存的图片。")
+
+    target_dir = Path(storage_dir or settings.generated_image_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    filename = f"dream-{dream_id}-{uuid4().hex}.png"
+    (target_dir / filename).write_bytes(image_data)
+    return f"{settings.generated_image_url_prefix}/{filename}"
 
 
 @router.post("", response_model=DreamResponse, status_code=201)
@@ -210,16 +230,25 @@ async def generate_dream_image(
     if not dream:
         raise HTTPException(status_code=404, detail="梦境不存在")
 
-    generator = get_image_generator()
-    image_result = await generator.generate(
-        dream_content=dream.content,
-        mood=dream.mood,
-        style=req.style,
-    )
+    try:
+        generator = get_image_generator()
+        image_result = await generator.generate(
+            dream_content=dream.content,
+            mood=dream.mood,
+            style=req.style,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="AI 绘梦服务暂时不可用，请稍后重试。") from exc
 
-    # TODO: 将 image_data 上传到 OSS，获取永久 URL
-    # 暂时使用直接返回的 URL
-    dream.image_url = image_result.image_url
+    # TODO: replace local persistence with OSS and keep this endpoint contract.
+    dream.image_url = await _persist_generated_image(
+        dream_id=dream.id,
+        image_data=image_result.image_data,
+    )
     dream.image_style = image_result.style
 
     await db.flush()

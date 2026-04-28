@@ -8,6 +8,7 @@ import { api } from "../api/client";
 import { DreamDetailPage } from "./DreamDetailPage";
 
 vi.mock("../api/client", () => ({
+  apiBaseUrl: "http://localhost:8001/api/v1",
   api: {
     get: vi.fn(),
     post: vi.fn()
@@ -77,5 +78,27 @@ describe("DreamDetailPage interpretation", () => {
     expect(screen.getByText("象征意义")).toBeInTheDocument();
     expect(screen.getByText("文化视角")).toBeInTheDocument();
     expect(screen.getByText("图书馆")).toBeInTheDocument();
+  });
+
+  it("generates and displays AI dream image", async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.get).mockResolvedValue(baseDream);
+    vi.mocked(api.post).mockResolvedValue({
+      ...baseDream,
+      image_url: "data:image/png;base64,ZmFrZS1wbmc=",
+      image_style: "surreal_dreamlike"
+    });
+
+    renderDetail();
+
+    await user.click(await screen.findByRole("button", { name: "生成梦境画面" }));
+
+    expect(api.post).toHaveBeenCalledWith("/dreams/1/generate-image", {
+      style: "surreal_dreamlike"
+    });
+    expect(await screen.findByAltText("AI 生成的梦境画面")).toHaveAttribute(
+      "src",
+      "data:image/png;base64,ZmFrZS1wbmc="
+    );
   });
 });
