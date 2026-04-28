@@ -2,6 +2,7 @@
 数据库连接管理
 异步 SQLAlchemy + PostgreSQL
 """
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -52,5 +53,5 @@ async def init_db():
     """初始化数据库（创建所有表）"""
     async with engine.begin() as conn:
         # 启用 pgvector 扩展
-        await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
