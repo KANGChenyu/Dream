@@ -17,8 +17,8 @@ export function DreamList({ dreams, loading }: DreamListProps) {
   if (loading) {
     return (
       <StatusMessage
-        message="Your dream archive is syncing with the cloud."
-        title="Calling dreams back..."
+        message="你的梦境档案正在与云端同步。"
+        title="正在唤回梦境..."
       />
     );
   }
@@ -26,14 +26,14 @@ export function DreamList({ dreams, loading }: DreamListProps) {
   if (dreams.length === 0) {
     return (
       <StatusMessage
-        message="Write the first entry and DreamLog will keep it in your private archive."
-        title="No dreams recorded yet"
+        message="写下第一段梦境，DreamLog 会将它保存在你的私人档案中。"
+        title="还没有记录梦境"
       />
     );
   }
 
   return (
-    <div className="dream-list" aria-label="Dream entries">
+    <div className="dream-list" aria-label="梦境条目">
       {dreams.map((dream) => (
         <Link className="dream-card" key={dream.id} to={`/dreams/${dream.id}`}>
           <span className="dream-card__date">{dream.dream_date}</span>
@@ -42,8 +42,8 @@ export function DreamList({ dreams, loading }: DreamListProps) {
           <div className="dream-meta">
             <span>{getMoodLabel(dream.mood)}</span>
             <span>{getClarityLabel(dream.clarity)}</span>
-            <span>{dream.is_lucid ? "Lucid" : "Regular"}</span>
-            <span>{dream.is_public ? "Public" : "Private"}</span>
+            <span>{dream.is_lucid ? "清醒梦" : "普通梦"}</span>
+            <span>{dream.is_public ? "公开" : "私密"}</span>
           </div>
         </Link>
       ))}

@@ -28,7 +28,7 @@ export function DreamForm({ onCreate }: DreamFormProps) {
 
     const trimmedContent = content.trim();
     if (trimmedContent.length < 10) {
-      setError("Dream content must be at least 10 characters.");
+      setError("梦境内容至少需要 10 个字符。");
       return;
     }
 
@@ -50,7 +50,7 @@ export function DreamForm({ onCreate }: DreamFormProps) {
       setIsPublic(false);
       setIsAnonymous(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to save this dream.");
+      setError(err instanceof Error ? err.message : "梦境保存失败，请稍后重试。");
     } finally {
       setIsSaving(false);
     }
@@ -59,11 +59,11 @@ export function DreamForm({ onCreate }: DreamFormProps) {
   return (
     <form className="dream-form" onSubmit={handleSubmit}>
       <label className="dream-form__field dream-form__field--content">
-        <span>Dream content</span>
+        <span>梦境内容</span>
         <textarea
           name="content"
           onChange={(event) => setContent(event.target.value)}
-          placeholder="Record the setting, symbols, people, colors, and what stayed with you after waking..."
+          placeholder="记录梦里的场景、符号、人物、颜色，以及醒来后仍然停留在心里的感觉..."
           rows={9}
           value={content}
         />
@@ -71,7 +71,7 @@ export function DreamForm({ onCreate }: DreamFormProps) {
 
       <div className="dream-form__grid">
         <label className="dream-form__field">
-          <span>Dream date</span>
+          <span>梦境日期</span>
           <input
             name="dream_date"
             onChange={(event) => setDreamDate(event.target.value)}
@@ -81,7 +81,7 @@ export function DreamForm({ onCreate }: DreamFormProps) {
         </label>
 
         <label className="dream-form__field">
-          <span>Mood</span>
+          <span>醒来情绪</span>
           <select
             name="mood"
             onChange={(event) => setMood(event.target.value as Mood)}
@@ -96,9 +96,9 @@ export function DreamForm({ onCreate }: DreamFormProps) {
         </label>
 
         <label className="dream-form__field">
-          <span>Clarity</span>
+          <span>清晰度</span>
           <input
-            aria-label="Clarity"
+            aria-label="清晰度"
             max={5}
             min={1}
             name="clarity"
@@ -111,7 +111,7 @@ export function DreamForm({ onCreate }: DreamFormProps) {
       </div>
 
       <fieldset className="dream-form__toggles">
-        <legend>Publishing</legend>
+        <legend>发布设置</legend>
         <label>
           <input
             checked={isLucid}
@@ -119,7 +119,7 @@ export function DreamForm({ onCreate }: DreamFormProps) {
             onChange={(event) => setIsLucid(event.target.checked)}
             type="checkbox"
           />
-          <span>Lucid dream</span>
+          <span>清醒梦</span>
         </label>
         <label>
           <input
@@ -128,7 +128,7 @@ export function DreamForm({ onCreate }: DreamFormProps) {
             onChange={(event) => setIsPublic(event.target.checked)}
             type="checkbox"
           />
-          <span>Share publicly</span>
+          <span>公开到社区</span>
         </label>
         <label>
           <input
@@ -137,7 +137,7 @@ export function DreamForm({ onCreate }: DreamFormProps) {
             onChange={(event) => setIsAnonymous(event.target.checked)}
             type="checkbox"
           />
-          <span>Post anonymously</span>
+          <span>匿名发布</span>
         </label>
       </fieldset>
 
@@ -148,7 +148,7 @@ export function DreamForm({ onCreate }: DreamFormProps) {
       ) : null}
 
       <button className="primary-action dream-form__submit" disabled={isSaving} type="submit">
-        {isSaving ? "Saving..." : "Save dream"}
+        {isSaving ? "保存中..." : "保存梦境"}
       </button>
     </form>
   );

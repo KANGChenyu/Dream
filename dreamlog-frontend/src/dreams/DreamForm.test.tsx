@@ -21,29 +21,29 @@ describe("DreamForm", () => {
     render(<DreamForm onCreate={onCreate} />);
     vi.useRealTimers();
 
-    expect(screen.getByLabelText("Dream date")).toHaveValue("2026-04-28");
+    expect(screen.getByLabelText("梦境日期")).toHaveValue("2026-04-28");
 
-    await user.type(screen.getByLabelText("Dream content"), "short");
-    await user.click(screen.getByRole("button", { name: "Save dream" }));
+    await user.type(screen.getByLabelText("梦境内容"), "太短");
+    await user.click(screen.getByRole("button", { name: "保存梦境" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("at least 10 characters");
+    expect(await screen.findByRole("alert")).toHaveTextContent("至少需要 10 个字符");
     expect(onCreate).not.toHaveBeenCalled();
 
-    await user.clear(screen.getByLabelText("Dream content"));
+    await user.clear(screen.getByLabelText("梦境内容"));
     await user.type(
-      screen.getByLabelText("Dream content"),
-      "I walked through a moonlit garden and found a blue door."
+      screen.getByLabelText("梦境内容"),
+      "我穿过一座被月光照亮的花园，发现了一扇蓝色的门。"
     );
-    await user.selectOptions(screen.getByLabelText("Mood"), "happy");
-    await user.clear(screen.getByLabelText("Clarity"));
-    await user.type(screen.getByLabelText("Clarity"), "4");
-    await user.click(screen.getByLabelText("Lucid dream"));
-    await user.click(screen.getByLabelText("Share publicly"));
-    await user.click(screen.getByLabelText("Post anonymously"));
-    await user.click(screen.getByRole("button", { name: "Save dream" }));
+    await user.selectOptions(screen.getByLabelText("醒来情绪"), "happy");
+    await user.clear(screen.getByLabelText("清晰度"));
+    await user.type(screen.getByLabelText("清晰度"), "4");
+    await user.click(screen.getByLabelText("清醒梦"));
+    await user.click(screen.getByLabelText("公开到社区"));
+    await user.click(screen.getByLabelText("匿名发布"));
+    await user.click(screen.getByRole("button", { name: "保存梦境" }));
 
     expect(onCreate).toHaveBeenCalledWith({
-      content: "I walked through a moonlit garden and found a blue door.",
+      content: "我穿过一座被月光照亮的花园，发现了一扇蓝色的门。",
       dream_date: "2026-04-28",
       mood: "happy",
       clarity: 4,
