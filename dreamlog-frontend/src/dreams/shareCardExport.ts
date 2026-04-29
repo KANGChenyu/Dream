@@ -8,6 +8,18 @@ export interface ShareCardExportOptions {
 
 const CARD_WIDTH = 1080;
 const CARD_HEIGHT = 1350;
+const CARD_X = 100;
+const CARD_Y = 70;
+const CARD_INNER_X = 150;
+const CARD_INNER_WIDTH = 780;
+
+const LABEL_SHARE_CARD = "\u68a6\u5883\u5206\u4eab\u5361";
+const LABEL_AI_ANALYSIS = "AI \u89e3\u6790";
+const LABEL_SUMMARY = "\u2726 \u89e3\u8bfb\u6458\u8981";
+const LABEL_KEYWORDS = "\u25c7 \u5173\u952e\u8bcd";
+const LABEL_MYSTERY = "\u2726 \u795e\u79d8";
+const LABEL_EXPECTATION = "\u2726 \u671f\u5f85";
+const LABEL_BRAND_LINE = "\u00b7 \u8bb0\u5f55\u68a6\u5883\uff0c\u53d1\u73b0\u5171\u9e23";
 
 function getDreamTitle(dream: DreamResponse) {
   return dream.title ?? dream.content.slice(0, 18);
@@ -99,6 +111,19 @@ function drawGlassPanel(
   ctx.restore();
 }
 
+function drawMoonIcon(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number) {
+  ctx.save();
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.beginPath();
+  ctx.arc(x + radius * 0.45, y - radius * 0.18, radius * 0.92, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 function triggerDownload(dataUrl: string, filename: string) {
   const link = document.createElement("a");
   link.href = dataUrl;
@@ -113,7 +138,7 @@ export async function downloadDreamShareCard(dream: DreamResponse, options: Shar
   const ctx = canvas.getContext("2d");
 
   if (!ctx) {
-    throw new Error("当前浏览器不支持生成分享卡片。");
+    throw new Error("\u5f53\u524d\u6d4f\u89c8\u5668\u4e0d\u652f\u6301\u751f\u6210\u5206\u4eab\u5361\u7247\u3002");
   }
 
   const background = ctx.createLinearGradient(0, 0, CARD_WIDTH, CARD_HEIGHT);
@@ -135,32 +160,32 @@ export async function downloadDreamShareCard(dream: DreamResponse, options: Shar
   }
   ctx.restore();
 
-  drawGlassPanel(ctx, 110, 70, 860, 1210, 54);
-  drawGlassPanel(ctx, 150, 110, 780, 590, 36);
+  drawGlassPanel(ctx, CARD_X, CARD_Y, 880, 1210, 58);
+  drawGlassPanel(ctx, CARD_INNER_X, 110, CARD_INNER_WIDTH, 590, 36);
 
   const image = dream.image_url ? await loadImage(resolveAssetUrl(dream.image_url)) : null;
   ctx.save();
-  drawRoundedRect(ctx, 150, 110, 780, 590, 36);
+  drawRoundedRect(ctx, CARD_INNER_X, 110, CARD_INNER_WIDTH, 590, 36);
   ctx.clip();
   if (image) {
-    const ratio = Math.max(780 / image.width, 590 / image.height);
+    const ratio = Math.max(CARD_INNER_WIDTH / image.width, 590 / image.height);
     const width = image.width * ratio;
     const height = image.height * ratio;
-    ctx.drawImage(image, 150 + (780 - width) / 2, 110 + (590 - height) / 2, width, height);
+    ctx.drawImage(image, CARD_INNER_X + (CARD_INNER_WIDTH - width) / 2, 110 + (590 - height) / 2, width, height);
   } else {
-    const artGradient = ctx.createLinearGradient(150, 110, 930, 700);
+    const artGradient = ctx.createLinearGradient(CARD_INNER_X, 110, 930, 700);
     artGradient.addColorStop(0, "#1a2668");
     artGradient.addColorStop(0.52, "#5869d5");
     artGradient.addColorStop(1, "#cab9ff");
     ctx.fillStyle = artGradient;
-    ctx.fillRect(150, 110, 780, 590);
+    ctx.fillRect(CARD_INNER_X, 110, CARD_INNER_WIDTH, 590);
     ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
     ctx.beginPath();
     ctx.arc(740, 220, 62, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.fillStyle = "rgba(6, 10, 40, 0.38)";
-  ctx.fillRect(150, 500, 780, 200);
+  ctx.fillRect(CARD_INNER_X, 500, CARD_INNER_WIDTH, 200);
   ctx.restore();
 
   ctx.fillStyle = "#ffffff";
@@ -168,41 +193,50 @@ export async function downloadDreamShareCard(dream: DreamResponse, options: Shar
   ctx.fillText(getDreamTitle(dream), 220, 610);
   ctx.font = '28px "Microsoft YaHei", "PingFang SC", sans-serif';
   ctx.fillStyle = "rgba(235, 237, 255, 0.82)";
-  ctx.fillText(`${dream.dream_date} · 梦境分享卡 · AI 解析`, 220, 660);
+  ctx.fillText(`${dream.dream_date} \u00b7 ${LABEL_SHARE_CARD} \u00b7 ${LABEL_AI_ANALYSIS}`, 220, 660);
 
-  drawGlassPanel(ctx, 150, 730, 780, 220, 30);
+  drawGlassPanel(ctx, CARD_INNER_X, 730, CARD_INNER_WIDTH, 200, 30);
   ctx.font = '700 30px "Microsoft YaHei", "PingFang SC", sans-serif';
   ctx.fillStyle = "#f2edff";
-  ctx.fillText("✦ 解读摘要", 200, 790);
+  ctx.fillText(LABEL_SUMMARY, 200, 790);
   ctx.font = '30px "Microsoft YaHei", "PingFang SC", sans-serif';
   ctx.fillStyle = "rgba(244, 246, 255, 0.9)";
   drawWrappedText(ctx, getSummary(dream), 200, 845, 680, 46, 3);
 
-  drawGlassPanel(ctx, 150, 980, 780, 120, 28);
+  drawGlassPanel(ctx, CARD_INNER_X, 955, CARD_INNER_WIDTH, 130, 28);
   ctx.font = '700 30px "Microsoft YaHei", "PingFang SC", sans-serif';
   ctx.fillStyle = "#f2edff";
-  ctx.fillText("◇ 关键词", 200, 1032);
+  ctx.fillText(LABEL_KEYWORDS, 200, 1012);
   ctx.font = '26px "Microsoft YaHei", "PingFang SC", sans-serif';
-  options.keywords.slice(0, 6).forEach((keyword, index) => {
-    const x = 200 + index * 118;
-    drawRoundedRect(ctx, x, 1054, 96, 42, 21);
+  options.keywords.slice(0, 5).forEach((keyword, index) => {
+    const x = 200 + index * 128;
+    drawRoundedRect(ctx, x, 1032, 104, 44, 22);
     ctx.fillStyle = "rgba(132, 110, 245, 0.78)";
     ctx.fill();
     ctx.fillStyle = "#ffffff";
-    ctx.fillText(keyword.slice(0, 4), x + 20, 1084);
+    ctx.fillText(keyword.slice(0, 4), x + 22, 1064);
   });
 
-  drawGlassPanel(ctx, 150, 1130, 780, 88, 28);
+  drawGlassPanel(ctx, CARD_INNER_X, 1110, CARD_INNER_WIDTH, 92, 28);
   ctx.font = '28px "Microsoft YaHei", "PingFang SC", sans-serif';
   ctx.fillStyle = "#ffffff";
-  ctx.fillText(`✦ 神秘     ≋ ${getMoodLabel(dream.mood)}     ✦ 期待`, 220, 1185);
+  ctx.fillText(`${LABEL_MYSTERY}     \u2248 ${getMoodLabel(dream.mood)}     ${LABEL_EXPECTATION}`, 220, 1168);
+
+  drawGlassPanel(ctx, CARD_INNER_X, 1225, CARD_INNER_WIDTH, 82, 24);
+  const footerGradient = ctx.createLinearGradient(175, 1238, 233, 1296);
+  footerGradient.addColorStop(0, "#5166e1");
+  footerGradient.addColorStop(1, "#8a62e5");
+  drawRoundedRect(ctx, 175, 1238, 58, 58, 16);
+  ctx.fillStyle = footerGradient;
+  ctx.fill();
+  drawMoonIcon(ctx, 205, 1267, 16);
 
   ctx.font = '700 34px Georgia, "Times New Roman", serif';
   ctx.fillStyle = "#dbcfff";
-  ctx.fillText("DreamLog", 230, 1265);
+  ctx.fillText("DreamLog", 255, 1275);
   ctx.font = '24px "Microsoft YaHei", "PingFang SC", sans-serif';
   ctx.fillStyle = "rgba(235, 237, 255, 0.78)";
-  ctx.fillText("· 记录梦境，发现共鸣", 415, 1263);
+  ctx.fillText(LABEL_BRAND_LINE, 445, 1273);
 
   triggerDownload(canvas.toDataURL("image/png"), `dreamlog-share-card-${dream.id}.png`);
 }
