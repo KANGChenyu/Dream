@@ -85,7 +85,8 @@ describe("DreamDetailPage interpretation", () => {
 
     renderDetail();
 
-    await user.click(await screen.findByRole("button", { name: "生成 AI 解读" }));
+    await user.click(await screen.findByRole("button", { name: /\u68a6\u5883\u89e3\u6790/ }));
+    await user.click(await screen.findByRole("button", { name: "\u751f\u6210 AI \u89e3\u8bfb" }));
 
     expect(api.post).toHaveBeenCalledWith("/dreams/1/interpret");
     expect(await screen.findByText("你的内心正在点亮一间安静的书房。")).toBeInTheDocument();
@@ -93,6 +94,30 @@ describe("DreamDetailPage interpretation", () => {
     expect(screen.getByText("象征意义")).toBeInTheDocument();
     expect(screen.getByText("文化视角")).toBeInTheDocument();
     expect(screen.getByText("图书馆")).toBeInTheDocument();
+  });
+
+  it("opens AI interpretation inside a large modal instead of the side panel", async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.get).mockResolvedValue({
+      ...baseDream,
+      interpretation: {
+        psychology: "心理学弹窗内容",
+        symbolism: "象征意义弹窗内容",
+        cultural: "文化视角弹窗内容",
+        summary: "解析摘要应该在弹窗里展示。",
+        advice: "建议内容",
+        keywords: ["弹窗"]
+      }
+    });
+
+    renderDetail();
+
+    await user.click(await screen.findByRole("button", { name: /\u68a6\u5883\u89e3\u6790/ }));
+
+    const modal = await screen.findByRole("dialog", { name: "AI 梦境解析" });
+    expect(modal).toHaveTextContent("解析摘要应该在弹窗里展示。");
+    expect(modal).toHaveTextContent("心理学弹窗内容");
+    expect(screen.getByRole("button", { name: "关闭弹窗" })).toBeInTheDocument();
   });
 
   it("generates and displays AI dream image", async () => {
@@ -106,7 +131,8 @@ describe("DreamDetailPage interpretation", () => {
 
     renderDetail();
 
-    await user.click(await screen.findByRole("button", { name: "生成梦境画面" }));
+    await user.click(await screen.findByRole("button", { name: /\u68a6\u5883\u56fe\u7247/ }));
+    await user.click(await screen.findByRole("button", { name: "\u751f\u6210\u68a6\u5883\u753b\u9762" }));
 
     expect(api.post).toHaveBeenCalledWith("/dreams/1/generate-image", {
       style: "surreal_dreamlike"
@@ -155,10 +181,10 @@ describe("DreamDetailPage interpretation", () => {
 
     renderDetail();
 
-    await user.click(await screen.findByRole("button", { name: "生成分享卡片" }));
+    await user.click(await screen.findByRole("button", { name: /\u5206\u4eab\u5361\u7247/ }));
 
     expect((await screen.findAllByText("昨夜的月光之门")).length).toBeGreaterThan(1);
-    expect(screen.getAllByText("这个梦像是在提醒你：你正站在一个新的选择入口前。").length).toBeGreaterThan(1);
+    expect(screen.getAllByText("这个梦像是在提醒你：你正站在一个新的选择入口前。").length).toBeGreaterThan(0);
     expect(screen.getByText("DreamLog")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "下载 PNG" }));

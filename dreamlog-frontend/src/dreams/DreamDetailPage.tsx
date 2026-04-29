@@ -1,4 +1,4 @@
-import { Brain, Brush, CalendarDays, Download, Eye, Heart, Lock, MessageCircle, Moon, Send, Sparkles } from "lucide-react";
+import { Brain, Brush, CalendarDays, Download, Eye, Heart, Lock, MessageCircle, Moon, Send, Sparkles, X } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
@@ -137,6 +137,8 @@ interface DreamDetailPageProps {
   source?: "mine" | "community";
 }
 
+type DreamTool = "interpretation" | "image" | "share-card" | null;
+
 export function DreamDetailPage({ source = "mine" }: DreamDetailPageProps) {
   const { id } = useParams();
   const isCommunitySource = source === "community";
@@ -152,6 +154,7 @@ export function DreamDetailPage({ source = "mine" }: DreamDetailPageProps) {
   const [isShareCardOpen, setIsShareCardOpen] = useState(false);
   const [shareCardError, setShareCardError] = useState("");
   const [isDownloadingShareCard, setIsDownloadingShareCard] = useState(false);
+  const [activeTool, setActiveTool] = useState<DreamTool>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -189,6 +192,21 @@ export function DreamDetailPage({ source = "mine" }: DreamDetailPageProps) {
       isMounted = false;
     };
   }, [id, isCommunitySource]);
+
+  useEffect(() => {
+    if (!activeTool) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setActiveTool(null);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [activeTool]);
 
   if (loading) {
     return (
@@ -374,168 +392,176 @@ export function DreamDetailPage({ source = "mine" }: DreamDetailPageProps) {
             </>
           ) : (
             <>
-          <GlassPanel title="AI 梦境解析">
-            {dream.interpretation ? (
-              <div className="interpretation-panel">
-                <p className="interpretation-summary">{dream.interpretation.summary}</p>
-                <section>
-                  <h3>心理学解读</h3>
-                  <p>{dream.interpretation.psychology}</p>
-                </section>
-                <section>
-                  <h3>象征意义</h3>
-                  <p>{dream.interpretation.symbolism}</p>
-                </section>
-                <section>
-                  <h3>文化视角</h3>
-                  <p>{dream.interpretation.cultural}</p>
-                </section>
-                {dream.interpretation.advice ? (
-                  <section>
-                    <h3>梦境建议</h3>
-                    <p>{dream.interpretation.advice}</p>
-                  </section>
-                ) : null}
-              </div>
-            ) : (
-              <div className="detail-placeholder-panel">
-                <Brain aria-hidden="true" className="panel-icon" />
-                <p>基于产品文档中的梦境解读 Prompt，调用 DeepSeek 生成心理学、象征意义与文化视角报告。</p>
-                {interpretError ? (
-                  <p className="form-error" role="alert">
-                    {interpretError}
-                  </p>
-                ) : null}
-                <button
-                  className="secondary-action"
-                  disabled={isInterpreting}
-                  onClick={handleInterpret}
-                  type="button"
-                >
-                  {isInterpreting ? "生成中..." : "生成 AI 解读"}
-                </button>
-              </div>
-            )}
-          </GlassPanel>
-
-          <GlassPanel title="AI 绘梦">
-            {dream.image_url ? (
-              <div className="dream-image-panel">
-                <img alt="AI 生成的梦境画面" src={resolveAssetUrl(dream.image_url)} />
-                <button
-                  className="secondary-action"
-                  disabled={isGeneratingImage}
-                  onClick={handleGenerateImage}
-                  type="button"
-                >
-                  {isGeneratingImage ? "生成中..." : "重新生成"}
-                </button>
-              </div>
-            ) : (
-              <div className="detail-placeholder-panel">
-                <Brush aria-hidden="true" className="panel-icon" />
-                <p>把这段梦境转化为一张柔和、超现实的专属视觉图像。</p>
-                {imageError ? (
-                  <p className="form-error" role="alert">
-                    {imageError}
-                  </p>
-                ) : null}
-                <button
-                  className="secondary-action"
-                  disabled={isGeneratingImage}
-                  onClick={handleGenerateImage}
-                  type="button"
-                >
-                  {isGeneratingImage ? "生成中..." : "生成梦境画面"}
-                </button>
-              </div>
-            )}
-          </GlassPanel>
-
-          <GlassPanel title="关键词">
-            <div className="detail-placeholder-panel">
-              <Sparkles aria-hidden="true" className="panel-icon" />
-              <div className="chip-row" aria-label="梦境关键词">
-                {(keywords.length > 0 ? keywords : placeholderTags).map((tag) => (
-                  <span key={tag}>{tag}</span>
-                ))}
-              </div>
-            </div>
-          </GlassPanel>
-          <GlassPanel title="社区分享">
-            <div className="share-card-builder">
-              <p>生成一张适合保存和分享的梦境卡片，只包含图片、摘要、关键词和情绪氛围。</p>
-              <div className="share-card-actions">
-                <button
-                  className="secondary-action"
-                  onClick={() => {
-                    setIsShareCardOpen(true);
-                    setShareCardError("");
-                  }}
-                  type="button"
-                >
-                  生成分享卡片
-                </button>
-                {isShareCardOpen ? (
+              <GlassPanel title="梦境工具">
+                <div className="dream-tool-grid">
+                  <button className="dream-tool-button" onClick={() => setActiveTool("interpretation")} type="button">
+                    <Brain aria-hidden="true" size={20} />
+                    <span>梦境解析</span>
+                    <small>{dream.interpretation ? "查看 AI 解读" : "生成心理与象征报告"}</small>
+                  </button>
+                  <button className="dream-tool-button" onClick={() => setActiveTool("image")} type="button">
+                    <Brush aria-hidden="true" size={20} />
+                    <span>梦境图片</span>
+                    <small>{dream.image_url ? "查看或重新生成" : "生成梦境画面"}</small>
+                  </button>
                   <button
-                    className="secondary-action"
-                    disabled={isDownloadingShareCard}
-                    onClick={handleDownloadShareCard}
+                    className="dream-tool-button"
+                    onClick={() => {
+                      setIsShareCardOpen(true);
+                      setShareCardError("");
+                      setActiveTool("share-card");
+                    }}
                     type="button"
                   >
-                    <Download aria-hidden="true" size={17} />
-                    {isDownloadingShareCard ? "下载中..." : "下载 PNG"}
+                    <Send aria-hidden="true" size={20} />
+                    <span>分享卡片</span>
+                    <small>预览并下载 PNG</small>
                   </button>
-                ) : null}
-              </div>
-              {shareCardError ? (
-                <p className="form-error" role="alert">
-                  {shareCardError}
-                </p>
-              ) : null}
-              {isShareCardOpen ? <DreamShareCard dream={dream} keywords={keywords} /> : null}
-            </div>
-            <div className="share-card-preview">
-              {dream.image_url ? (
-                <img alt="" src={resolveAssetUrl(dream.image_url)} />
-              ) : (
-                <div className="share-card-preview__empty" aria-hidden="true">
-                  <Send size={24} />
                 </div>
-              )}
-              <div>
-                <strong>{getDreamTitle(dream)}</strong>
-                <p>{dream.content.slice(0, 72)}</p>
-              </div>
-            </div>
-            {publishError ? (
-              <p className="form-error" role="alert">
-                {publishError}
-              </p>
-            ) : null}
-            {isCommunitySource ? (
-              <Link className="secondary-action share-action-link" to="/community">
-                返回社区
-              </Link>
-            ) : dream.is_public ? (
-              <Link className="secondary-action share-action-link" to="/community">
-                已发布到社区
-              </Link>
-            ) : (
-              <button
-                className="secondary-action"
-                disabled={isPublishing}
-                onClick={handlePublish}
-                type="button"
-              >
-                {isPublishing ? "发布中..." : "发布到社区"}
-              </button>
-            )}
-          </GlassPanel>
+              </GlassPanel>
+
+              <GlassPanel title="关键词">
+                <div className="detail-placeholder-panel">
+                  <Sparkles aria-hidden="true" className="panel-icon" />
+                  <div className="chip-row" aria-label="梦境关键词">
+                    {(keywords.length > 0 ? keywords : placeholderTags).map((tag) => (
+                      <span key={tag}>{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              </GlassPanel>
+
+              <GlassPanel title="社区分享">
+                {publishError ? (
+                  <p className="form-error" role="alert">
+                    {publishError}
+                  </p>
+                ) : null}
+                {dream.is_public ? (
+                  <Link className="secondary-action share-action-link" to="/community">
+                    已发布到社区
+                  </Link>
+                ) : (
+                  <button className="secondary-action" disabled={isPublishing} onClick={handlePublish} type="button">
+                    {isPublishing ? "发布中..." : "发布到社区"}
+                  </button>
+                )}
+              </GlassPanel>
             </>
           )}
         </aside>
       </section>
+
+      {activeTool ? (
+        <div className="dream-tool-modal-backdrop" role="presentation">
+          <section
+            aria-label={
+              activeTool === "interpretation" ? "AI 梦境解析" : activeTool === "image" ? "梦境图片" : "分享卡片"
+            }
+            aria-modal="true"
+            className="dream-tool-modal"
+            role="dialog"
+          >
+            <header className="dream-tool-modal__header">
+              <div>
+                <p className="eyebrow">DreamLog Tool</p>
+                <h2>{activeTool === "interpretation" ? "AI 梦境解析" : activeTool === "image" ? "梦境图片" : "分享卡片"}</h2>
+              </div>
+              <button
+                aria-label="关闭弹窗"
+                className="dream-tool-modal__close"
+                onClick={() => setActiveTool(null)}
+                type="button"
+              >
+                <X aria-hidden="true" size={22} />
+              </button>
+            </header>
+
+            <div className="dream-tool-modal__body">
+              {activeTool === "interpretation" ? (
+                dream.interpretation ? (
+                  <div className="interpretation-panel">
+                    <p className="interpretation-summary">{dream.interpretation.summary}</p>
+                    <section>
+                      <h3>心理学解读</h3>
+                      <p>{dream.interpretation.psychology}</p>
+                    </section>
+                    <section>
+                      <h3>象征意义</h3>
+                      <p>{dream.interpretation.symbolism}</p>
+                    </section>
+                    <section>
+                      <h3>文化视角</h3>
+                      <p>{dream.interpretation.cultural}</p>
+                    </section>
+                    {dream.interpretation.advice ? (
+                      <section>
+                        <h3>梦境建议</h3>
+                        <p>{dream.interpretation.advice}</p>
+                      </section>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="detail-placeholder-panel">
+                    <Brain aria-hidden="true" className="panel-icon" />
+                    <p>基于产品文档中的梦境解读 Prompt，调用 DeepSeek 生成心理学、象征意义与文化视角报告。</p>
+                    {interpretError ? (
+                      <p className="form-error" role="alert">
+                        {interpretError}
+                      </p>
+                    ) : null}
+                    <button className="secondary-action" disabled={isInterpreting} onClick={handleInterpret} type="button">
+                      {isInterpreting ? "生成中..." : "生成 AI 解读"}
+                    </button>
+                  </div>
+                )
+              ) : null}
+
+              {activeTool === "image" ? (
+                dream.image_url ? (
+                  <div className="dream-image-panel dream-image-panel--modal">
+                    <img alt="AI 生成的梦境画面" src={resolveAssetUrl(dream.image_url)} />
+                    <button className="secondary-action" disabled={isGeneratingImage} onClick={handleGenerateImage} type="button">
+                      {isGeneratingImage ? "生成中..." : "重新生成"}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="detail-placeholder-panel">
+                    <Brush aria-hidden="true" className="panel-icon" />
+                    <p>把这段梦境转化为一张柔和、超现实的专属视觉图像。</p>
+                    {imageError ? (
+                      <p className="form-error" role="alert">
+                        {imageError}
+                      </p>
+                    ) : null}
+                    <button className="secondary-action" disabled={isGeneratingImage} onClick={handleGenerateImage} type="button">
+                      {isGeneratingImage ? "生成中..." : "生成梦境画面"}
+                    </button>
+                  </div>
+                )
+              ) : null}
+
+              {activeTool === "share-card" ? (
+                <div className="share-card-builder share-card-builder--modal">
+                  <p>在弹窗里预览梦境卡片，确认后下载 PNG。</p>
+                  <div className="share-card-actions">
+                    <button className="secondary-action" disabled={isDownloadingShareCard} onClick={handleDownloadShareCard} type="button">
+                      <Download aria-hidden="true" size={17} />
+                      {isDownloadingShareCard ? "下载中..." : "下载 PNG"}
+                    </button>
+                  </div>
+                  {shareCardError ? (
+                    <p className="form-error" role="alert">
+                      {shareCardError}
+                    </p>
+                  ) : null}
+                  <DreamShareCard dream={dream} keywords={keywords} />
+                </div>
+              ) : null}
+            </div>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }

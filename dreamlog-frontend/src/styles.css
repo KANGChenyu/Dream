@@ -798,6 +798,112 @@ button:disabled {
   gap: 18px;
 }
 
+.dream-tool-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.dream-tool-button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 12px;
+  align-items: center;
+  width: 100%;
+  min-height: 74px;
+  border: 1px solid rgba(214, 204, 255, 0.2);
+  border-radius: 18px;
+  color: var(--dream-text);
+  text-align: left;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(143, 231, 255, 0.13), transparent 9rem),
+    rgba(255, 255, 255, 0.07);
+  padding: 14px;
+}
+
+.dream-tool-button svg {
+  grid-row: span 2;
+  color: #ded5ff;
+}
+
+.dream-tool-button span,
+.dream-tool-button small {
+  overflow-wrap: anywhere;
+}
+
+.dream-tool-button span {
+  font-weight: 900;
+}
+
+.dream-tool-button small {
+  color: var(--dream-muted);
+}
+
+.dream-tool-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 44px);
+  background: rgba(3, 5, 18, 0.74);
+  backdrop-filter: blur(18px);
+}
+
+.dream-tool-modal {
+  display: grid;
+  width: min(100%, 980px);
+  max-height: min(88vh, 920px);
+  overflow: hidden;
+  border: 1px solid rgba(226, 215, 255, 0.34);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(143, 231, 255, 0.15), transparent 16rem),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04)),
+    rgba(17, 20, 51, 0.94);
+  box-shadow: 0 28px 120px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.dream-tool-modal__header {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(214, 204, 255, 0.18);
+  padding: clamp(20px, 3vw, 30px);
+}
+
+.dream-tool-modal__header h2 {
+  margin: 0;
+  color: var(--dream-text);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+}
+
+.dream-tool-modal__close {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(214, 204, 255, 0.24);
+  border-radius: 999px;
+  color: var(--dream-text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dream-tool-modal__body {
+  overflow: auto;
+  padding: clamp(20px, 3vw, 30px);
+}
+
+.dream-image-panel--modal img {
+  max-height: 62vh;
+  aspect-ratio: 16 / 10;
+}
+
+.share-card-builder--modal .dream-share-card {
+  width: min(100%, 430px);
+}
+
 .dream-detail-content {
   min-height: 280px;
   border: 1px solid rgba(214, 204, 255, 0.16);

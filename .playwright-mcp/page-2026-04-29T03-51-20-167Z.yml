@@ -1,0 +1,67 @@
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - paragraph [ref=e6]: DreamLog Community
+      - heading "墨香窄径" [level=1] [ref=e7]
+      - paragraph [ref=e8]: 完整保存这一晚的梦境、情绪与清醒度，后续 AI 解析与绘梦会在这里继续展开。
+    - link "返回社区" [ref=e9] [cursor=pointer]:
+      - /url: /community
+  - region "梦境详情" [ref=e10]:
+    - generic [ref=e11]:
+      - heading "梦境正文" [level=2] [ref=e13]
+      - generic [ref=e14]:
+        - article [ref=e15]:
+          - paragraph [ref=e16]: 我发现自己站在一条非常狭窄的走廊里。左右两边的墙壁不是普通的墙，而是从地面一直延伸到看不见的顶端的巨大书架，上面塞满了各种颜色、厚薄不一的书。空气里有一股浓郁的、混杂着旧纸张、墨水还有一点点灰尘的味道，安静得能听到自己的心跳。 光线很暗，只有头顶几盏老式的、发出微黄光晕的灯泡。我下意识地往前走，脚下的木地板随着我的脚步发出“咯吱咯吱”的声响。
+        - generic "梦境元数据" [ref=e17]:
+          - generic [ref=e18]:
+            - term [ref=e19]:
+              - img [ref=e20]
+              - text: 梦境日期
+            - definition [ref=e22]: 2026-04-28
+          - generic [ref=e23]:
+            - term [ref=e24]:
+              - img [ref=e25]
+              - text: 情绪
+            - definition [ref=e27]: 平静
+          - generic [ref=e28]:
+            - term [ref=e29]:
+              - img [ref=e30]
+              - text: 清晰度
+            - definition [ref=e32]: 清晰
+          - generic [ref=e33]:
+            - term [ref=e34]:
+              - img [ref=e35]
+              - text: 梦境状态
+            - definition [ref=e38]: 普通梦
+          - generic [ref=e39]:
+            - term [ref=e40]:
+              - img [ref=e41]
+              - text: 可见范围
+            - definition [ref=e44]: 公开
+    - complementary "社区互动面板" [ref=e45]:
+      - generic [ref=e46]:
+        - heading "关键词" [level=2] [ref=e48]
+        - generic [ref=e50]:
+          - img [ref=e51]
+          - generic "梦境关键词" [ref=e53]:
+            - generic [ref=e54]: 书架
+            - generic [ref=e55]: 走廊
+            - generic [ref=e56]: 宁静
+            - generic [ref=e57]: 回忆
+            - generic [ref=e58]: 探索
+      - generic [ref=e59]:
+        - heading "社区互动" [level=2] [ref=e61]
+        - generic [ref=e63]:
+          - button "点赞 0" [ref=e64] [cursor=pointer]:
+            - img [ref=e65]
+            - text: 点赞
+            - generic [ref=e67]: "0"
+          - generic [ref=e68]:
+            - generic [ref=e69]: 评论
+            - textbox "评论" [ref=e70]:
+              - /placeholder: 写下温柔的共鸣或提问...
+            - button "发表评论" [disabled] [ref=e71]:
+              - img [ref=e72]
+              - text: 发表评论
+          - generic "社区评论" [ref=e74]:
+            - paragraph [ref=e75]: 还没有评论。
