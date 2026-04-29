@@ -46,6 +46,16 @@ function renderDetail() {
   );
 }
 
+function renderCommunityDetail() {
+  return render(
+    <MemoryRouter initialEntries={["/community/dreams/1"]}>
+      <Routes>
+        <Route element={<DreamDetailPage source="community" />} path="/community/dreams/:id" />
+      </Routes>
+    </MemoryRouter>
+  );
+}
+
 describe("DreamDetailPage interpretation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -119,5 +129,16 @@ describe("DreamDetailPage interpretation", () => {
       is_anonymous: false
     });
     expect(await screen.findByText("已发布到社区")).toBeInTheDocument();
+  });
+  it("loads public community dreams through the community endpoint", async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      ...baseDream,
+      is_public: true
+    });
+
+    renderCommunityDetail();
+
+    expect(api.get).toHaveBeenCalledWith("/community/dreams/1");
+    expect((await screen.findAllByText(baseDream.content)).length).toBeGreaterThan(0);
   });
 });

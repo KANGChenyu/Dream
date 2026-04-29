@@ -15,8 +15,13 @@ function getDreamTitle(dream: DreamResponse) {
   return dream.title ?? dream.content.slice(0, 32);
 }
 
-export function DreamDetailPage() {
+interface DreamDetailPageProps {
+  source?: "mine" | "community";
+}
+
+export function DreamDetailPage({ source = "mine" }: DreamDetailPageProps) {
   const { id } = useParams();
+  const isCommunitySource = source === "community";
   const [dream, setDream] = useState<DreamResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -41,7 +46,8 @@ export function DreamDetailPage() {
       setError("");
 
       try {
-        const response = await api.get<DreamResponse>(`/dreams/${id}`);
+        const path = isCommunitySource ? `/community/dreams/${id}` : `/dreams/${id}`;
+        const response = await api.get<DreamResponse>(path);
         if (isMounted) {
           setDream(response);
         }
@@ -61,7 +67,7 @@ export function DreamDetailPage() {
     return () => {
       isMounted = false;
     };
-  }, [id]);
+  }, [id, isCommunitySource]);
 
   if (loading) {
     return (
@@ -151,12 +157,12 @@ export function DreamDetailPage() {
     <main className="app-shell dream-detail-shell">
       <header className="dream-detail-hero">
         <div>
-          <p className="eyebrow">DreamLog 详情</p>
+          <p className="eyebrow">{isCommunitySource ? "DreamLog Community" : "DreamLog 详情"}</p>
           <h1>{getDreamTitle(dream)}</h1>
           <p>完整保存这一晚的梦境、情绪与清醒度，后续 AI 解析与绘梦会在这里继续展开。</p>
         </div>
-        <Link className="ghost-button dream-detail-back" to="/">
-          返回梦境档案
+        <Link className="ghost-button dream-detail-back" to={isCommunitySource ? "/community" : "/"}>
+          {isCommunitySource ? "返回社区" : "返回梦境档案"}
         </Link>
       </header>
 
@@ -313,7 +319,11 @@ export function DreamDetailPage() {
                 {publishError}
               </p>
             ) : null}
-            {dream.is_public ? (
+            {isCommunitySource ? (
+              <Link className="secondary-action share-action-link" to="/community">
+                返回社区
+              </Link>
+            ) : dream.is_public ? (
               <Link className="secondary-action share-action-link" to="/community">
                 已发布到社区
               </Link>

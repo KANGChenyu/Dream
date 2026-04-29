@@ -47,6 +47,14 @@ function AppRoutes() {
         <Route
           element={
             <ProtectedRoute>
+              <DreamDetailPage source="community" />
+            </ProtectedRoute>
+          }
+          path="/community/dreams/:id"
+        />
+        <Route
+          element={
+            <ProtectedRoute>
               <CommunityPage />
             </ProtectedRoute>
           }

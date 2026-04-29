@@ -18,6 +18,7 @@ from app.schemas.community import (
     CommentCreateRequest, CommentResponse,
     FeedItemResponse, FeedResponse,
 )
+from app.schemas.dream import DreamResponse
 
 router = APIRouter(prefix="/community", tags=["社区"])
 
@@ -112,6 +113,21 @@ async def get_trending(
         page=1, page_size=page_size, sort="hot",
         tag=None, db=db, user=user,
     )
+
+
+@router.get("/dreams/{dream_id}", response_model=DreamResponse)
+async def get_public_dream(
+    dream_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """获取公开梦境详情"""
+    result = await db.execute(
+        select(Dream).where(Dream.id == dream_id, Dream.is_public == True)
+    )
+    dream = result.scalar_one_or_none()
+    if not dream:
+        raise HTTPException(status_code=404, detail="梦境不存在")
+    return DreamResponse.model_validate(dream)
 
 
 @router.post("/dreams/{dream_id}/like")

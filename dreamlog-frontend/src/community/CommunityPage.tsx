@@ -72,7 +72,7 @@ export function CommunityPage() {
         ) : null}
         <div className="community-feed">
           {items.map((item) => (
-            <Link className="community-card" key={item.id} to={`/dreams/${item.id}`}>
+            <Link className="community-card" key={item.id} to={`/community/dreams/${item.id}`}>
               {item.image_url ? (
                 <img alt={getFeedTitle(item)} src={resolveAssetUrl(item.image_url)} />
               ) : (
