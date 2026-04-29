@@ -101,4 +101,23 @@ describe("DreamDetailPage interpretation", () => {
       "data:image/png;base64,ZmFrZS1wbmc="
     );
   });
+
+  it("publishes the dream to the community", async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.get).mockResolvedValue(baseDream);
+    vi.mocked(api.post).mockResolvedValue({
+      ...baseDream,
+      is_public: true,
+      is_anonymous: false
+    });
+
+    renderDetail();
+
+    await user.click(await screen.findByRole("button", { name: "发布到社区" }));
+
+    expect(api.post).toHaveBeenCalledWith("/dreams/1/publish", {
+      is_anonymous: false
+    });
+    expect(await screen.findByText("已发布到社区")).toBeInTheDocument();
+  });
 });

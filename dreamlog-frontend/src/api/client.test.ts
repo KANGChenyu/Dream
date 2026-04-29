@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, api, createApiClient } from "./client";
+import { ApiError, api, apiBaseUrl, createApiClient } from "./client";
 
 describe("createApiClient", () => {
   afterEach(() => {
@@ -87,7 +87,7 @@ describe("api", () => {
     localStorage.clear();
   });
 
-  it("uses the default api base url and local storage token", async () => {
+  it("uses the configured api base url and local storage token", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -99,7 +99,7 @@ describe("api", () => {
     await api.get("/auth/me");
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:8000/api/v1/auth/me",
+      `${apiBaseUrl}/auth/me`,
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: "Bearer stored-token"

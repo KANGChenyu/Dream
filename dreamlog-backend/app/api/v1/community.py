@@ -7,6 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc, exists
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.deps import get_current_user, get_current_user_optional
@@ -31,7 +32,7 @@ async def get_feed(
     user: Optional[User] = Depends(get_current_user_optional),
 ):
     """获取社区梦境 Feed"""
-    query = select(Dream).where(Dream.is_public == True)
+    query = select(Dream).options(selectinload(Dream.user)).where(Dream.is_public == True)
 
     # 标签筛选
     if tag:

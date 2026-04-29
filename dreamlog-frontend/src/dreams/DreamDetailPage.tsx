@@ -1,8 +1,9 @@
-import { Brain, Brush, CalendarDays, Eye, Lock, Moon, Sparkles } from "lucide-react";
+import { Brain, Brush, CalendarDays, Eye, Lock, Moon, Send, Sparkles } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
-import { api, apiBaseUrl } from "../api/client";
+import { resolveAssetUrl } from "../api/assets";
+import { api } from "../api/client";
 import type { DreamResponse } from "../api/types";
 import { GlassPanel } from "../components/GlassPanel";
 import { StatusMessage } from "../components/StatusMessage";
@@ -14,15 +15,6 @@ function getDreamTitle(dream: DreamResponse) {
   return dream.title ?? dream.content.slice(0, 32);
 }
 
-function resolveImageUrl(imageUrl: string) {
-  if (imageUrl.startsWith("data:") || /^https?:\/\//.test(imageUrl)) {
-    return imageUrl;
-  }
-
-  const apiOrigin = new URL(apiBaseUrl).origin;
-  return `${apiOrigin}${imageUrl}`;
-}
-
 export function DreamDetailPage() {
   const { id } = useParams();
   const [dream, setDream] = useState<DreamResponse | null>(null);
@@ -32,6 +24,8 @@ export function DreamDetailPage() {
   const [isInterpreting, setIsInterpreting] = useState(false);
   const [imageError, setImageError] = useState("");
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [publishError, setPublishError] = useState("");
+  const [isPublishing, setIsPublishing] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -131,6 +125,25 @@ export function DreamDetailPage() {
       setImageError(err instanceof Error ? err.message : "AI 绘梦生成失败，请稍后重试。");
     } finally {
       setIsGeneratingImage(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!id) {
+      return;
+    }
+
+    setIsPublishing(true);
+    setPublishError("");
+    try {
+      const response = await api.post<DreamResponse>(`/dreams/${id}/publish`, {
+        is_anonymous: false
+      });
+      setDream(response);
+    } catch (err) {
+      setPublishError(err instanceof Error ? err.message : "发布到社区失败，请稍后重试。");
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -240,7 +253,7 @@ export function DreamDetailPage() {
           <GlassPanel title="AI 绘梦">
             {dream.image_url ? (
               <div className="dream-image-panel">
-                <img alt="AI 生成的梦境画面" src={resolveImageUrl(dream.image_url)} />
+                <img alt="AI 生成的梦境画面" src={resolveAssetUrl(dream.image_url)} />
                 <button
                   className="secondary-action"
                   disabled={isGeneratingImage}
@@ -280,6 +293,40 @@ export function DreamDetailPage() {
                 ))}
               </div>
             </div>
+          </GlassPanel>
+          <GlassPanel title="社区分享">
+            <div className="share-card-preview">
+              {dream.image_url ? (
+                <img alt="" src={resolveAssetUrl(dream.image_url)} />
+              ) : (
+                <div className="share-card-preview__empty" aria-hidden="true">
+                  <Send size={24} />
+                </div>
+              )}
+              <div>
+                <strong>{getDreamTitle(dream)}</strong>
+                <p>{dream.content.slice(0, 72)}</p>
+              </div>
+            </div>
+            {publishError ? (
+              <p className="form-error" role="alert">
+                {publishError}
+              </p>
+            ) : null}
+            {dream.is_public ? (
+              <Link className="secondary-action share-action-link" to="/community">
+                已发布到社区
+              </Link>
+            ) : (
+              <button
+                className="secondary-action"
+                disabled={isPublishing}
+                onClick={handlePublish}
+                type="button"
+              >
+                {isPublishing ? "发布中..." : "发布到社区"}
+              </button>
+            )}
           </GlassPanel>
         </aside>
       </section>

@@ -17,7 +17,7 @@ from app.models.user import User
 from app.models.dream import Dream, DreamInterpretation, DreamTag
 from app.schemas.dream import (
     DreamCreateRequest, DreamUpdateRequest, DreamResponse,
-    DreamListResponse, GenerateImageRequest, DreamMatchResponse,
+    DreamListResponse, DreamPublishRequest, GenerateImageRequest, DreamMatchResponse,
 )
 from app.services.ai import get_interpreter, get_image_generator
 
@@ -155,6 +155,28 @@ async def delete_dream(
     if not dream:
         raise HTTPException(status_code=404, detail="梦境不存在")
     await db.delete(dream)
+
+
+@router.post("/{dream_id}/publish", response_model=DreamResponse)
+async def publish_dream(
+    dream_id: int,
+    req: DreamPublishRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """发布梦境到社区"""
+    result = await db.execute(
+        select(Dream).where(Dream.id == dream_id, Dream.user_id == user.id)
+    )
+    dream = result.scalar_one_or_none()
+    if not dream:
+        raise HTTPException(status_code=404, detail="梦境不存在")
+
+    dream.is_public = True
+    dream.is_anonymous = req.is_anonymous
+    await db.flush()
+    await db.refresh(dream)
+    return DreamResponse.model_validate(dream)
 
 
 @router.post("/{dream_id}/interpret", response_model=DreamResponse)

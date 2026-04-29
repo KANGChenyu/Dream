@@ -26,6 +26,10 @@ class DreamUpdateRequest(BaseModel):
     is_anonymous: Optional[bool] = None
 
 
+class DreamPublishRequest(BaseModel):
+    is_anonymous: bool = False
+
+
 class GenerateImageRequest(BaseModel):
     style: str = Field(default="surreal_dreamlike", description="绘图风格")
 

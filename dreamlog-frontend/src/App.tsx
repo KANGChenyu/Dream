@@ -9,6 +9,7 @@ import type { ReactNode } from "react";
 
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { LoginPage } from "./auth/LoginPage";
+import { CommunityPage } from "./community/CommunityPage";
 import { DreamDetailPage } from "./dreams/DreamDetailPage";
 import { DreamWorkspace } from "./dreams/DreamWorkspace";
 
@@ -42,6 +43,14 @@ function AppRoutes() {
             </ProtectedRoute>
           }
           path="/dreams/:id"
+        />
+        <Route
+          element={
+            <ProtectedRoute>
+              <CommunityPage />
+            </ProtectedRoute>
+          }
+          path="/community"
         />
         <Route element={<Navigate replace to="/" />} path="*" />
       </Routes>

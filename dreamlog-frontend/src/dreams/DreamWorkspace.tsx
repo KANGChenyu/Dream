@@ -1,4 +1,5 @@
-import { Brain, CloudMoon, Feather, LogOut, Sparkles } from "lucide-react";
+import { Brain, CloudMoon, Feather, LogOut, Sparkles, Users } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 
 import { api } from "../api/client";
@@ -52,10 +53,16 @@ export function DreamWorkspace() {
             让梦境档案替你保存每一次心灵深处的回响。
           </p>
         </div>
-        <button className="ghost-button workspace-logout" onClick={logout} type="button">
+        <div className="workspace-actions">
+          <Link className="ghost-button workspace-link" to="/community">
+            <Users aria-hidden="true" size={17} />
+            <span>梦境社区</span>
+          </Link>
+          <button className="ghost-button workspace-logout" onClick={logout} type="button">
           <LogOut aria-hidden="true" size={17} />
           <span>退出登录</span>
-        </button>
+          </button>
+        </div>
       </header>
 
       <section className="workspace-grid" aria-label="梦境日志工作台">
