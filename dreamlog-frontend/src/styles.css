@@ -929,6 +929,195 @@ button:disabled {
   text-decoration: none;
 }
 
+.share-card-builder {
+  display: grid;
+  gap: 16px;
+}
+
+.share-card-builder > p {
+  margin: 0;
+  color: var(--dream-muted);
+  line-height: 1.65;
+}
+
+.share-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.share-card-actions .secondary-action {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  width: fit-content;
+  min-width: 140px;
+  margin-top: 0;
+}
+
+.dream-share-card {
+  position: relative;
+  width: min(100%, 360px);
+  margin: 4px auto 0;
+  border-radius: 34px;
+  padding: 2px;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.9), rgba(158, 134, 255, 0.36) 32%, rgba(109, 178, 255, 0.54) 72%, rgba(255, 255, 255, 0.78));
+  box-shadow: 0 22px 72px rgba(97, 87, 218, 0.38);
+}
+
+.dream-share-card__frame {
+  display: grid;
+  gap: 12px;
+  overflow: hidden;
+  border-radius: 32px;
+  padding: 14px;
+  background: radial-gradient(circle at 28% 8%, rgba(214, 204, 255, 0.5), transparent 28%), linear-gradient(160deg, rgba(21, 28, 84, 0.96), rgba(51, 62, 148, 0.9) 52%, rgba(124, 105, 219, 0.82));
+}
+
+.dream-share-card__art {
+  position: relative;
+  min-height: 260px;
+  overflow: hidden;
+  border: 1px solid rgba(223, 218, 255, 0.48);
+  border-radius: 26px;
+  background: linear-gradient(150deg, #18215f, #5867cc 54%, #c4b4ff);
+}
+
+.dream-share-card__art img,
+.dream-share-card__fallback-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.dream-share-card__art img {
+  object-fit: cover;
+}
+
+.dream-share-card__fallback-art {
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.82);
+  background: radial-gradient(circle at 72% 26%, rgba(255, 255, 255, 0.82), transparent 12%), radial-gradient(circle at 18% 78%, rgba(165, 143, 255, 0.76), transparent 24%), linear-gradient(150deg, #18215f, #5867cc 54%, #c4b4ff);
+}
+
+.dream-share-card__art::after {
+  position: absolute;
+  inset: 42% 0 0;
+  content: "";
+  background: linear-gradient(transparent, rgba(7, 10, 36, 0.74));
+}
+
+.dream-share-card__art-copy {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1;
+}
+
+.dream-share-card__art-copy h2,
+.dream-share-card__art-copy p,
+.dream-share-card__section h3,
+.dream-share-card__section p,
+.dream-share-card__footer {
+  margin: 0;
+}
+
+.dream-share-card__art-copy h2 {
+  color: #fff;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.8rem;
+  line-height: 1.15;
+  text-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+.dream-share-card__art-copy p {
+  margin-top: 8px;
+  color: rgba(238, 241, 255, 0.82);
+  font-size: 0.9rem;
+}
+
+.dream-share-card__art-copy span,
+.dream-share-card__chips span,
+.dream-share-card__moods span {
+  border: 1px solid rgba(223, 218, 255, 0.34);
+  border-radius: 999px;
+  background: rgba(112, 98, 226, 0.56);
+}
+
+.dream-share-card__art-copy span {
+  padding: 4px 10px;
+}
+
+.dream-share-card__section {
+  display: grid;
+  gap: 10px;
+  border: 1px solid rgba(223, 218, 255, 0.32);
+  border-radius: 22px;
+  padding: 14px;
+  background: rgba(20, 28, 86, 0.48);
+  box-shadow: inset 0 1px 18px rgba(255, 255, 255, 0.08);
+}
+
+.dream-share-card__section h3 {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  color: #ded5ff;
+  font-size: 1rem;
+}
+
+.dream-share-card__section p {
+  color: rgba(244, 246, 255, 0.9);
+  line-height: 1.65;
+}
+
+.dream-share-card__chips,
+.dream-share-card__moods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.dream-share-card__chips span,
+.dream-share-card__moods span {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 7px 12px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.88rem;
+}
+
+.dream-share-card__footer {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid rgba(223, 218, 255, 0.22);
+  border-radius: 22px;
+  padding: 12px;
+  color: rgba(238, 241, 255, 0.74);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dream-share-card__footer strong {
+  color: #d9ceff;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.1rem;
+}
+
+.dream-share-card__brand-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(145deg, rgba(81, 102, 225, 0.95), rgba(138, 98, 229, 0.92));
+}
+
 .interpretation-panel {
   display: grid;
   gap: 14px;

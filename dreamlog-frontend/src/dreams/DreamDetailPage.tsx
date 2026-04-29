@@ -1,4 +1,4 @@
-import { Brain, Brush, CalendarDays, Eye, Heart, Lock, MessageCircle, Moon, Send, Sparkles } from "lucide-react";
+import { Brain, Brush, CalendarDays, Download, Eye, Heart, Lock, MessageCircle, Moon, Send, Sparkles } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
@@ -8,6 +8,8 @@ import type { CommentResponse, DreamResponse } from "../api/types";
 import { GlassPanel } from "../components/GlassPanel";
 import { StatusMessage } from "../components/StatusMessage";
 import { getClarityLabel, getMoodLabel } from "./dreamOptions";
+import { DreamShareCard } from "./DreamShareCard";
+import { downloadDreamShareCard } from "./shareCardExport";
 
 const placeholderTags = ["意象", "情绪", "地点", "人物"];
 
@@ -147,6 +149,9 @@ export function DreamDetailPage({ source = "mine" }: DreamDetailPageProps) {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [publishError, setPublishError] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isShareCardOpen, setIsShareCardOpen] = useState(false);
+  const [shareCardError, setShareCardError] = useState("");
+  const [isDownloadingShareCard, setIsDownloadingShareCard] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -266,6 +271,18 @@ export function DreamDetailPage({ source = "mine" }: DreamDetailPageProps) {
       setPublishError(err instanceof Error ? err.message : "发布到社区失败，请稍后重试。");
     } finally {
       setIsPublishing(false);
+    }
+  };
+
+  const handleDownloadShareCard = async () => {
+    setIsDownloadingShareCard(true);
+    setShareCardError("");
+    try {
+      await downloadDreamShareCard(dream, { keywords });
+    } catch (err) {
+      setShareCardError(err instanceof Error ? err.message : "分享卡片下载失败，请稍后重试。");
+    } finally {
+      setIsDownloadingShareCard(false);
     }
   };
 
@@ -446,6 +463,38 @@ export function DreamDetailPage({ source = "mine" }: DreamDetailPageProps) {
             </div>
           </GlassPanel>
           <GlassPanel title="社区分享">
+            <div className="share-card-builder">
+              <p>生成一张适合保存和分享的梦境卡片，只包含图片、摘要、关键词和情绪氛围。</p>
+              <div className="share-card-actions">
+                <button
+                  className="secondary-action"
+                  onClick={() => {
+                    setIsShareCardOpen(true);
+                    setShareCardError("");
+                  }}
+                  type="button"
+                >
+                  生成分享卡片
+                </button>
+                {isShareCardOpen ? (
+                  <button
+                    className="secondary-action"
+                    disabled={isDownloadingShareCard}
+                    onClick={handleDownloadShareCard}
+                    type="button"
+                  >
+                    <Download aria-hidden="true" size={17} />
+                    {isDownloadingShareCard ? "下载中..." : "下载 PNG"}
+                  </button>
+                ) : null}
+              </div>
+              {shareCardError ? (
+                <p className="form-error" role="alert">
+                  {shareCardError}
+                </p>
+              ) : null}
+              {isShareCardOpen ? <DreamShareCard dream={dream} keywords={keywords} /> : null}
+            </div>
             <div className="share-card-preview">
               {dream.image_url ? (
                 <img alt="" src={resolveAssetUrl(dream.image_url)} />

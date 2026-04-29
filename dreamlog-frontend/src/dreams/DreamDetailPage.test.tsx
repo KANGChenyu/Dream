@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DreamResponse } from "../api/types";
 import { api } from "../api/client";
 import { DreamDetailPage } from "./DreamDetailPage";
+import { downloadDreamShareCard } from "./shareCardExport";
 
 vi.mock("../api/client", () => ({
   apiBaseUrl: "http://localhost:8001/api/v1",
@@ -13,6 +14,10 @@ vi.mock("../api/client", () => ({
     get: vi.fn(),
     post: vi.fn()
   }
+}));
+
+vi.mock("./shareCardExport", () => ({
+  downloadDreamShareCard: vi.fn()
 }));
 
 const baseDream: DreamResponse = {
@@ -130,6 +135,40 @@ describe("DreamDetailPage interpretation", () => {
     });
     expect(await screen.findByText("已发布到社区")).toBeInTheDocument();
   });
+  it("previews and downloads a private dream share card", async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.get).mockResolvedValue({
+      ...baseDream,
+      title: "昨夜的月光之门",
+      image_url: "data:image/png;base64,ZmFrZS1wbmc=",
+      interpretation: {
+        psychology: "心理学解读",
+        symbolism: "象征意义",
+        cultural: "文化视角",
+        summary: "这个梦像是在提醒你：你正站在一个新的选择入口前。",
+        advice: "醒来后可以记录下一件想尝试的新事。",
+        keywords: ["月亮", "门", "水面", "选择"]
+      },
+      tags: [{ tag: "月亮" }, { tag: "门" }]
+    });
+    vi.mocked(downloadDreamShareCard).mockResolvedValue(undefined);
+
+    renderDetail();
+
+    await user.click(await screen.findByRole("button", { name: "生成分享卡片" }));
+
+    expect((await screen.findAllByText("昨夜的月光之门")).length).toBeGreaterThan(1);
+    expect(screen.getAllByText("这个梦像是在提醒你：你正站在一个新的选择入口前。").length).toBeGreaterThan(1);
+    expect(screen.getByText("DreamLog")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "下载 PNG" }));
+
+    expect(downloadDreamShareCard).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 1, title: "昨夜的月光之门" }),
+      expect.objectContaining({ keywords: ["月亮", "门", "水面", "选择"] })
+    );
+  });
+
   it("loads public community dreams through the community endpoint", async () => {
     vi.mocked(api.get).mockResolvedValueOnce({
       ...baseDream,
