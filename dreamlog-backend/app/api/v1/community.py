@@ -23,6 +23,10 @@ from app.schemas.dream import DreamResponse
 router = APIRouter(prefix="/community", tags=["社区"])
 
 
+def _to_public_dream_response(dream: Dream) -> DreamResponse:
+    return DreamResponse.model_validate(dream).model_copy(update={"interpretation": None})
+
+
 @router.get("/feed", response_model=FeedResponse)
 async def get_feed(
     page: int = Query(1, ge=1),
@@ -127,7 +131,7 @@ async def get_public_dream(
     dream = result.scalar_one_or_none()
     if not dream:
         raise HTTPException(status_code=404, detail="梦境不存在")
-    return DreamResponse.model_validate(dream)
+    return _to_public_dream_response(dream)
 
 
 @router.post("/dreams/{dream_id}/like")

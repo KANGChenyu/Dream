@@ -1,10 +1,10 @@
-import { Brain, Brush, CalendarDays, Eye, Lock, Moon, Send, Sparkles } from "lucide-react";
+import { Brain, Brush, CalendarDays, Eye, Heart, Lock, MessageCircle, Moon, Send, Sparkles } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 import { resolveAssetUrl } from "../api/assets";
 import { api } from "../api/client";
-import type { DreamResponse } from "../api/types";
+import type { CommentResponse, DreamResponse } from "../api/types";
 import { GlassPanel } from "../components/GlassPanel";
 import { StatusMessage } from "../components/StatusMessage";
 import { getClarityLabel, getMoodLabel } from "./dreamOptions";
@@ -13,6 +13,122 @@ const placeholderTags = ["意象", "情绪", "地点", "人物"];
 
 function getDreamTitle(dream: DreamResponse) {
   return dream.title ?? dream.content.slice(0, 32);
+}
+
+function CommunityInteractionPanel({ dream }: { dream: DreamResponse }) {
+  const [comments, setComments] = useState<CommentResponse[]>([]);
+  const [commentContent, setCommentContent] = useState("");
+  const [likeCount, setLikeCount] = useState(dream.like_count);
+  const [commentError, setCommentError] = useState("");
+  const [isLiking, setIsLiking] = useState(false);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadComments() {
+      try {
+        const response = await api.get<CommentResponse[]>(`/community/dreams/${dream.id}/comments`);
+        if (isMounted) {
+          setComments(response);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setCommentError(err instanceof Error ? err.message : "评论加载失败，请稍后重试。");
+        }
+      }
+    }
+
+    void loadComments();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [dream.id]);
+
+  const handleLike = async () => {
+    setIsLiking(true);
+    setCommentError("");
+    try {
+      const response = await api.post<{ liked: boolean; like_count: number }>(
+        `/community/dreams/${dream.id}/like`
+      );
+      setLikeCount(response.like_count);
+    } catch (err) {
+      setCommentError(err instanceof Error ? err.message : "点赞失败，请稍后重试。");
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+  const handleSubmitComment = async () => {
+    const content = commentContent.trim();
+    if (!content) {
+      return;
+    }
+
+    setIsSubmittingComment(true);
+    setCommentError("");
+    try {
+      const response = await api.post<CommentResponse>(`/community/dreams/${dream.id}/comments`, {
+        content
+      });
+      setComments((current) => [response, ...current]);
+      setCommentContent("");
+    } catch (err) {
+      setCommentError(err instanceof Error ? err.message : "评论发布失败，请稍后重试。");
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  return (
+    <GlassPanel title="社区互动">
+      <div className="community-actions-panel">
+        <button className="secondary-action" disabled={isLiking} onClick={handleLike} type="button">
+          <Heart aria-hidden="true" size={17} />
+          点赞
+          <span>{likeCount}</span>
+        </button>
+        <div className="community-comment-box">
+          <label htmlFor="community-comment">评论</label>
+          <textarea
+            id="community-comment"
+            maxLength={500}
+            onChange={(event) => setCommentContent(event.target.value)}
+            placeholder="写下温柔的共鸣或提问..."
+            value={commentContent}
+          />
+          <button
+            className="secondary-action"
+            disabled={isSubmittingComment || !commentContent.trim()}
+            onClick={handleSubmitComment}
+            type="button"
+          >
+            <MessageCircle aria-hidden="true" size={17} />
+            发表评论
+          </button>
+        </div>
+        {commentError ? (
+          <p className="form-error" role="alert">
+            {commentError}
+          </p>
+        ) : null}
+        <div className="community-comments" aria-label="社区评论">
+          {comments.length === 0 ? (
+            <p>还没有评论。</p>
+          ) : (
+            comments.map((comment) => (
+              <article key={comment.id}>
+                <strong>{comment.user_nickname}</strong>
+                <p>{comment.content}</p>
+              </article>
+            ))
+          )}
+        </div>
+      </div>
+    </GlassPanel>
+  );
 }
 
 interface DreamDetailPageProps {
@@ -159,7 +275,11 @@ export function DreamDetailPage({ source = "mine" }: DreamDetailPageProps) {
         <div>
           <p className="eyebrow">{isCommunitySource ? "DreamLog Community" : "DreamLog 详情"}</p>
           <h1>{getDreamTitle(dream)}</h1>
-          <p>完整保存这一晚的梦境、情绪与清醒度，后续 AI 解析与绘梦会在这里继续展开。</p>
+          <p>
+            {isCommunitySource
+              ? "在社区里与这段公开梦境轻轻相遇，留下共鸣或一点提问。"
+              : "完整保存这一晚的梦境、情绪与清醒度，后续 AI 解析与绘梦会在这里继续展开。"}
+          </p>
         </div>
         <Link className="ghost-button dream-detail-back" to={isCommunitySource ? "/community" : "/"}>
           {isCommunitySource ? "返回社区" : "返回梦境档案"}
@@ -211,7 +331,32 @@ export function DreamDetailPage({ source = "mine" }: DreamDetailPageProps) {
           </dl>
         </GlassPanel>
 
-        <aside className="dream-detail-side" aria-label="AI 梦境辅助面板">
+        <aside className="dream-detail-side" aria-label={isCommunitySource ? "社区互动面板" : "AI 梦境辅助面板"}>
+          {isCommunitySource ? (
+            <>
+              {dream.image_url ? (
+                <GlassPanel title="梦境画面">
+                  <div className="dream-image-panel">
+                    <img alt="公开梦境画面" src={resolveAssetUrl(dream.image_url)} />
+                  </div>
+                </GlassPanel>
+              ) : null}
+
+              <GlassPanel title="关键词">
+                <div className="detail-placeholder-panel">
+                  <Sparkles aria-hidden="true" className="panel-icon" />
+                  <div className="chip-row" aria-label="梦境关键词">
+                    {(keywords.length > 0 ? keywords : placeholderTags).map((tag) => (
+                      <span key={tag}>{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              </GlassPanel>
+
+              <CommunityInteractionPanel dream={dream} />
+            </>
+          ) : (
+            <>
           <GlassPanel title="AI 梦境解析">
             {dream.interpretation ? (
               <div className="interpretation-panel">
@@ -338,6 +483,8 @@ export function DreamDetailPage({ source = "mine" }: DreamDetailPageProps) {
               </button>
             )}
           </GlassPanel>
+            </>
+          )}
         </aside>
       </section>
     </main>

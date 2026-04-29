@@ -131,14 +131,27 @@ describe("DreamDetailPage interpretation", () => {
     expect(await screen.findByText("已发布到社区")).toBeInTheDocument();
   });
   it("loads public community dreams through the community endpoint", async () => {
-    vi.mocked(api.get).mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValueOnce({
       ...baseDream,
-      is_public: true
-    });
+      is_public: true,
+      interpretation: {
+        psychology: "别人不应该看到这段心理学解读。",
+        symbolism: "别人不应该看到这段象征意义。",
+        cultural: "别人不应该看到这段文化视角。",
+        summary: "别人不应该看到这段总结。",
+        advice: "别人不应该看到这段建议。",
+        keywords: ["隐私"]
+      }
+    }).mockResolvedValueOnce([]);
 
     renderCommunityDetail();
 
     expect(api.get).toHaveBeenCalledWith("/community/dreams/1");
     expect((await screen.findAllByText(baseDream.content)).length).toBeGreaterThan(0);
+    expect(screen.queryByText("别人不应该看到这段总结。")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "生成 AI 解读" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "生成梦境画面" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /点赞/ })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("写下温柔的共鸣或提问...")).toBeInTheDocument();
   });
 });
