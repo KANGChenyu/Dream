@@ -1,4 +1,4 @@
-import { Brain, Brush, CalendarDays, Download, Eye, Heart, Lock, MessageCircle, Moon, Send, Sparkles, X } from "lucide-react";
+import { Brain, Brush, CalendarDays, Download, Eye, Heart, HeartHandshake, Lock, MessageCircle, Moon, Send, Sparkles, X } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
@@ -417,6 +417,11 @@ export function DreamDetailPage({ source = "mine" }: DreamDetailPageProps) {
                     <span>分享卡片</span>
                     <small>预览并下载 PNG</small>
                   </button>
+                  <Link className="dream-tool-button dream-tool-link" to={`/matching?dreamId=${dream.id}`}>
+                    <HeartHandshake aria-hidden="true" size={20} />
+                    <span>撞梦匹配</span>
+                    <small>寻找相似梦境</small>
+                  </Link>
                 </div>
               </GlassPanel>
 

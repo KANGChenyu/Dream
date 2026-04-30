@@ -23,6 +23,7 @@ from app.services.ai import get_interpreter, get_image_generator
 
 settings = get_settings()
 router = APIRouter(prefix="/dreams", tags=["梦境"])
+MATCH_SIMILARITY_THRESHOLD = 0.2
 
 
 async def _persist_generated_image(
@@ -50,6 +51,7 @@ async def create_dream(
     """创建梦境记录"""
     dream = Dream(
         user_id=user.id,
+        title=req.title.strip() if req.title else None,
         content=req.content,
         dream_date=req.dream_date,
         mood=req.mood,
@@ -60,6 +62,15 @@ async def create_dream(
     )
     db.add(dream)
     await db.flush()
+
+    seen_tags = set()
+    for raw_tag in req.tags:
+        tag = raw_tag.strip()
+        if not tag or tag in seen_tags:
+            continue
+        seen_tags.add(tag)
+        db.add(DreamTag(dream_id=dream.id, tag=tag[:30]))
+
     await db.refresh(dream)
     return DreamResponse.model_validate(dream)
 
@@ -227,6 +238,8 @@ async def interpret_dream(
     if interpret_result.title:
         dream.title = interpret_result.title
 
+    dream.embedding = await interpreter.generate_embedding(dream.content)
+
     # 保存标签
     for keyword in interpret_result.keywords:
         tag = DreamTag(dream_id=dream.id, tag=keyword)
@@ -317,7 +330,7 @@ async def get_dream_matches(
         similar_dream = row[0]
         distance = row[1]
         similarity = 1 - distance  # cosine_distance → similarity
-        if similarity > 0.7:  # 只返回相似度较高的
+        if similarity >= MATCH_SIMILARITY_THRESHOLD:
             matches.append(DreamMatchResponse(
                 dream=DreamResponse.model_validate(similar_dream),
                 similarity=round(similarity, 3),

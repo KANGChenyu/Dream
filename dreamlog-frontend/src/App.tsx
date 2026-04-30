@@ -7,11 +7,14 @@ import {
 } from "react-router-dom";
 import type { ReactNode } from "react";
 
+import { ArchivePage } from "./archive/ArchivePage";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { LoginPage } from "./auth/LoginPage";
 import { CommunityPage } from "./community/CommunityPage";
 import { DreamDetailPage } from "./dreams/DreamDetailPage";
 import { DreamWorkspace } from "./dreams/DreamWorkspace";
+import { MatchingPage } from "./matching/MatchingPage";
+import { RecordPage } from "./record/RecordPage";
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -59,6 +62,30 @@ function AppRoutes() {
             </ProtectedRoute>
           }
           path="/community"
+        />
+        <Route
+          element={
+            <ProtectedRoute>
+              <MatchingPage />
+            </ProtectedRoute>
+          }
+          path="/matching"
+        />
+        <Route
+          element={
+            <ProtectedRoute>
+              <ArchivePage />
+            </ProtectedRoute>
+          }
+          path="/archive"
+        />
+        <Route
+          element={
+            <ProtectedRoute>
+              <RecordPage />
+            </ProtectedRoute>
+          }
+          path="/record"
         />
         <Route element={<Navigate replace to="/" />} path="*" />
       </Routes>
