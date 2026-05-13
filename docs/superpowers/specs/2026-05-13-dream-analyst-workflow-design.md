@@ -1,81 +1,85 @@
-# DreamAnalystWorkflow Design
+# DreamAnalystWorkflow 设计文档
 
-## Goal
+## 目标
 
-Upgrade DreamLog from a single-call AI dream interpretation product into the first version of an agent-capable dream analysis system.
+把 DreamLog 从“单次 AI 解梦产品”升级为具备第一版 agent 能力的梦境分析系统。
 
-The first agent capability will be a manually triggered `DreamAnalystWorkflow`: when a user opens a dream detail page and clicks "Deep analysis", the backend gathers the current dream, related historical dreams, recent dream trends, and existing AI interpretation, then generates and saves a structured personal report.
+第一版 agent 能力命名为 `DreamAnalystWorkflow`。用户在梦境详情页手动点击“深度分析”后，后端会收集当前梦境、历史相似梦境、近期梦境趋势和已有 AI 解读，再生成并保存一份结构化的个人深度分析报告。
 
-This is a controlled workflow agent rather than an open chat agent. It gives the product a real agent core first: goal-directed execution, tool-backed context gathering, user memory retrieval, structured output, persistence, and recoverable task state.
+这不是开放式聊天 agent，而是一个受控工作流 agent。它先把真正的 agent 内核做出来：目标驱动、工具取数、用户记忆检索、结构化输出、结果持久化、任务状态和失败恢复。
 
-## Non-Goals
+## 非目标
 
-The first version will not include:
+第一版不做以下内容：
 
-- A conversational chat UI.
-- Automatic weekly or monthly reports.
-- External psychology or dream-symbol knowledge-base RAG.
-- Community dream retrieval.
-- Multi-agent orchestration.
-- Fully autonomous planning loops.
+- 对话式聊天 UI。
+- 自动周报或月报。
+- 外部心理学知识库或梦境符号库 RAG。
+- 社区梦境检索。
+- 多 agent 编排。
+- 完全自主的规划循环。
 
-These can be added after the first workflow is stable.
+这些能力可以等第一版工作流稳定后再扩展。
 
-## Product Behavior
+## 产品行为
 
-The dream detail page will expose a manual "Deep analysis" entry point.
-
-When the user clicks it:
-
-1. The backend verifies that the target dream belongs to the current user.
-2. The backend creates an `agent_report` record with `pending` status.
-3. A Celery task runs the analysis workflow.
-4. The frontend polls the report status.
-5. When completed, the frontend shows the saved report.
-6. If the workflow fails, the report moves to `failed` and the frontend offers retry.
-
-The user-facing report uses a mixed format:
-
-- A warm summary at the top.
-- Structured analysis sections below it.
-
-The report should feel like a personal dream advisor, while still being concrete and inspectable.
-
-## Agent Boundary
-
-Existing AI interpretation is a single-dream AI call:
+梦境详情页新增一个手动入口：
 
 ```text
-current dream -> model -> interpretation
+深度分析
 ```
 
-`DreamAnalystWorkflow` is a goal-driven workflow:
+用户点击后：
+
+1. 后端校验该梦境属于当前用户。
+2. 后端创建一条 `agent_report` 记录，状态为 `pending`。
+3. Celery 任务执行深度分析工作流。
+4. 前端轮询报告状态。
+5. 完成后，前端展示已保存的报告。
+6. 失败时，报告状态变为 `failed`，前端提供重试入口。
+
+用户看到的是一份混合版报告：
+
+- 顶部是一段温柔、适合直接阅读的总结。
+- 下方是结构化分析内容。
+
+这份报告应该像一个私人梦境顾问，同时保留清晰、可检查的分析结构。
+
+## Agent 边界
+
+现有普通 AI 解梦是一次单梦模型调用：
 
 ```text
-current dream
-+ existing interpretation
-+ similar historical dreams
-+ recent 7/30 day dream trends
--> assembled dream memory context
--> model
--> saved agent report
+当前梦境 -> 模型 -> 解读结果
 ```
 
-The important agent behaviors in this first version are:
+`DreamAnalystWorkflow` 是目标驱动的工作流：
 
-- It has a specific goal: generate a personal deep-analysis report.
-- It uses product tools to gather context before calling the model.
-- It uses user dream memory RAG.
-- It writes a persistent result.
-- It exposes task state and failure state.
+```text
+当前梦境
++ 已有普通解读
++ 历史相似梦境
++ 最近 7/30 天梦境趋势
+-> 组装用户梦境记忆上下文
+-> 模型
+-> 保存 agent report
+```
 
-## Data Model
+第一版体现的 agent 能力是：
 
-Add a new `agent_reports` table instead of reusing `dream_interpretations`.
+- 有明确目标：生成个人梦境深度分析报告。
+- 会在调用模型前使用产品工具收集上下文。
+- 使用用户梦境记忆 RAG。
+- 写入可复用的持久化结果。
+- 暴露任务状态和失败状态。
 
-`dream_interpretations` represents normal single-dream AI interpretation. `agent_reports` represents agent-generated outputs that can support more report types later, such as weekly reports, dream sequence detection, or chat-grounding summaries.
+## 数据模型
 
-Suggested fields:
+新增 `agent_reports` 表，不复用 `dream_interpretations`。
+
+`dream_interpretations` 表示普通单梦 AI 解读；`agent_reports` 表示 agent 生成的报告产物。后者未来还可以支持周报、连续梦检测、对话式 agent 的上下文摘要等类型。
+
+建议字段：
 
 ```text
 id
@@ -92,13 +96,13 @@ created_at
 updated_at
 ```
 
-Initial `report_type`:
+第一版 `report_type`：
 
 ```text
 dream_deep_analysis
 ```
 
-Initial statuses:
+第一版状态：
 
 ```text
 pending
@@ -107,13 +111,13 @@ completed
 failed
 ```
 
-`input_snapshot` stores the selected context used for generation. This makes reports auditable and stable even if the underlying dream records change later.
+`input_snapshot` 保存本次生成时选取的上下文。这样即使后续梦境记录被修改，报告也仍然可追溯。
 
-`result` stores the validated structured output.
+`result` 保存通过校验的结构化报告。
 
-## Report Shape
+## 报告结构
 
-The generated report result must contain:
+生成结果必须包含：
 
 ```text
 title
@@ -126,33 +130,33 @@ suggestions
 evidence_notes
 ```
 
-Field intent:
+字段含义：
 
-- `title`: a short dream-analysis title.
-- `gentle_summary`: a warm top-level explanation for direct reading.
-- `current_themes`: themes found in the current dream.
-- `historical_connections`: links to similar or related past dreams.
-- `recurring_symbols`: repeated images, places, people, actions, or feelings.
-- `mood_trends`: recent emotional pattern from 7/30 day dream history.
-- `suggestions`: gentle reflections or journaling prompts.
-- `evidence_notes`: what context the analysis relied on, without exposing internal implementation details.
+- `title`：简短的梦境分析标题。
+- `gentle_summary`：顶部温柔总结，适合用户直接阅读。
+- `current_themes`：当前梦境里的核心主题。
+- `historical_connections`：与历史相似梦境或相关梦境的联系。
+- `recurring_symbols`：反复出现的画面、地点、人物、行为或感受。
+- `mood_trends`：最近 7/30 天梦境里的情绪趋势。
+- `suggestions`：温和的反思建议或记录提示。
+- `evidence_notes`：本次分析依据了哪些上下文，但不暴露内部技术细节。
 
-The frontend should not display technical terms such as RAG, embedding, vector search, or agent workflow.
+前端不要展示 RAG、embedding、向量检索、agent workflow 等技术词。
 
-## User Dream RAG
+## 用户梦境 RAG
 
-The first version uses only the current user's own dream history.
+第一版只使用当前用户自己的梦境历史。
 
-It does not retrieve:
+不检索：
 
-- Other users' public dreams.
-- Community dreams.
-- External psychology documents.
-- External dream dictionaries.
+- 其他用户的公开梦境。
+- 社区梦境。
+- 外部心理学资料。
+- 外部梦境辞典。
 
-Context sources:
+上下文来源分为三类。
 
-1. Current dream
+### 当前梦境
 
 ```text
 content
@@ -165,11 +169,11 @@ tags
 existing interpretation if present
 ```
 
-2. Similar historical dreams
+### 历史相似梦境
 
-Use the current dream embedding to retrieve up to 5 similar dreams from the same user, excluding the current dream.
+用当前梦境的 embedding，在同一个用户的历史梦境里检索最多 5 条相似梦境，并排除当前梦境本身。
 
-Return only compact context:
+只返回紧凑上下文：
 
 ```text
 dream_id
@@ -180,29 +184,29 @@ tags
 similarity
 ```
 
-If the current dream has no embedding, the workflow falls back to recent dreams and records that limitation in `input_snapshot`.
+如果当前梦境没有 embedding，工作流降级为只使用近期梦境，并在 `input_snapshot` 里记录这个限制。
 
-3. Recent dream trends
+### 近期梦境趋势
 
-Retrieve recent dreams for two windows:
+查询两个时间窗口：
 
 ```text
-last 7 days
-last 30 days
+最近 7 天
+最近 30 天
 ```
 
-Summarize:
+统计：
 
-- Mood distribution.
-- Frequent tags.
-- Repeated themes or symbols when available.
-- Dream count.
+- 情绪分布。
+- 高频标签。
+- 可用情况下的重复主题或意象。
+- 梦境数量。
 
-The workflow can compute simple counts deterministically before asking the model to produce prose.
+简单计数和趋势摘要优先由后端确定性计算，再交给模型生成自然语言分析。
 
-## Backend API
+## 后端 API
 
-Add these endpoints:
+新增接口：
 
 ```text
 POST /api/v1/dreams/{dream_id}/agent-reports/deep-analysis
@@ -210,30 +214,48 @@ GET /api/v1/agent-reports/{report_id}
 GET /api/v1/dreams/{dream_id}/agent-reports/deep-analysis/latest
 ```
 
-`POST /api/v1/dreams/{dream_id}/agent-reports/deep-analysis`
+### 创建深度分析报告
 
-- Requires authentication.
-- Verifies the dream belongs to the current user.
-- Creates an `agent_report` with `pending` status.
-- Dispatches a Celery task.
-- Returns the created report id and status.
-- Allows regeneration by creating a new report.
+```text
+POST /api/v1/dreams/{dream_id}/agent-reports/deep-analysis
+```
 
-`GET /api/v1/agent-reports/{report_id}`
+行为：
 
-- Requires authentication.
-- Verifies the report belongs to the current user.
-- Returns status, result, and error message when applicable.
+- 需要登录。
+- 校验梦境属于当前用户。
+- 创建 `pending` 状态的 `agent_report`。
+- 投递 Celery 任务。
+- 返回新建报告的 id 和状态。
+- 支持重新生成；重新生成会创建新报告。
 
-`GET /api/v1/dreams/{dream_id}/agent-reports/deep-analysis/latest`
+### 查询报告
 
-- Requires authentication.
-- Verifies dream ownership.
-- Returns the latest completed deep-analysis report for that dream if one exists.
+```text
+GET /api/v1/agent-reports/{report_id}
+```
 
-## Backend Components
+行为：
 
-Add:
+- 需要登录。
+- 校验报告属于当前用户。
+- 返回状态、结果，以及失败时的错误信息。
+
+### 查询最新完成报告
+
+```text
+GET /api/v1/dreams/{dream_id}/agent-reports/deep-analysis/latest
+```
+
+行为：
+
+- 需要登录。
+- 校验梦境属于当前用户。
+- 如果该梦境已有完成的深度分析报告，返回最新一份。
+
+## 后端组件
+
+新增：
 
 ```text
 app/models/agent_report.py
@@ -244,60 +266,59 @@ app/tasks/agent_tasks.py
 app/api/v1/agent_reports.py
 ```
 
-Responsibilities:
+职责：
 
-- `AgentReport` model: persistence and ownership.
-- Agent report schemas: API request/response validation.
-- `dream_memory.py`: user dream retrieval and deterministic trend summaries.
-- `dream_analyst.py`: workflow orchestration and prompt construction.
-- `agent_tasks.py`: Celery task wrapper and status transitions.
-- `agent_reports.py`: authenticated API endpoints.
+- `AgentReport` model：负责报告持久化和归属关系。
+- agent report schemas：负责 API 请求和响应校验。
+- `dream_memory.py`：负责用户梦境检索和确定性趋势摘要。
+- `dream_analyst.py`：负责工作流编排和 prompt 构造。
+- `agent_tasks.py`：负责 Celery 任务封装和状态流转。
+- `agent_reports.py`：负责鉴权后的 API 入口。
 
-The API layer should stay thin. It should not assemble prompts or implement retrieval logic.
+API 层保持轻薄，不在 API 里拼 prompt，也不在 API 里实现检索逻辑。
 
-## Workflow
+## 工作流
 
-Task flow:
+任务成功流程：
 
 ```text
 report.status = running
-load report
-load current dream
-load existing interpretation
-load similar historical dreams
-load 7/30 day recent dreams
-build input_snapshot
-call model with strict JSON instruction
-validate result
-save result
+加载 report
+加载当前梦境
+加载已有普通解读
+加载历史相似梦境
+加载最近 7/30 天梦境
+构造 input_snapshot
+用严格 JSON 要求调用模型
+校验 result
+保存 result
 report.status = completed
 ```
 
-Failure flow:
+任务失败流程：
 
 ```text
-catch exception
+捕获异常
 report.status = failed
-report.error_message = safe user-facing error
-save technical detail only in logs
+report.error_message = 安全的用户可读错误
+技术细节只写入日志
 ```
 
-The task should not leave a report in `running` forever after a handled failure.
+任务失败后不能让报告长期停留在 `running`。
 
-## Prompt Contract
+## Prompt 契约
 
-The first version should use strict JSON output.
+第一版要求模型输出严格 JSON。
 
-Prompt intent:
+Prompt 意图：
 
 ```text
-You are DreamLog's personal dream analysis agent.
-Use the current dream, similar historical dreams, and recent dream trend context.
-Generate a warm but structured report.
-Return only JSON.
+你是 DreamLog 的个人梦境分析 Agent。
+请基于当前梦境、历史相似梦境和近期梦境趋势，生成一份温柔但结构清晰的深度分析报告。
+只返回 JSON，不要输出 Markdown。
 ```
 
-Required JSON fields:
+必填 JSON 字段：
 
 ```text
 title
@@ -310,93 +331,93 @@ suggestions
 evidence_notes
 ```
 
-The backend validates the returned JSON before saving. Invalid JSON should mark the report as failed rather than returning malformed data to the frontend.
+后端必须校验模型返回的 JSON。校验失败时，报告状态设为 `failed`，不要把坏数据交给前端。
 
-## Frontend Experience
+## 前端体验
 
-The first version lives inside the existing dream detail page.
+第一版入口放在现有梦境详情页里。
 
-States:
-
-```text
-not_generated -> show "Deep analysis"
-pending/running -> show analysis in progress
-completed -> show report and "Regenerate"
-failed -> show failure message and "Retry"
-```
-
-Report layout:
+状态：
 
 ```text
-title
-gentle summary
-current themes
-historical connections
-recurring symbols
-mood trends
-suggestions
-evidence notes
+not_generated -> 显示“深度分析”
+pending/running -> 显示分析中
+completed -> 显示报告和“重新分析”
+failed -> 显示失败信息和“重试”
 ```
 
-The frontend should default to showing the latest completed report when the page loads.
+报告展示结构：
 
-Regeneration creates a new report. Historical reports can remain stored, while the UI shows the latest completed one.
+```text
+标题
+温柔总结
+当前主题
+历史关联
+重复意象
+情绪趋势
+建议
+依据说明
+```
 
-## Error Handling
+详情页加载时，前端默认查询并展示最新完成报告。
 
-Expected cases:
+重新分析会创建一份新报告。历史报告可以继续保留，UI 默认展示最新完成的一份。
 
-- Dream not found or not owned by user: return 404.
-- Report not found or not owned by user: return 404.
-- Model unavailable: report becomes `failed`.
-- Invalid model JSON: report becomes `failed`.
-- Missing embedding: continue with recent-dream fallback.
-- No historical dreams: still generate a current-dream-focused report and note limited history.
+## 错误处理
 
-## Testing
+需要覆盖的情况：
 
-Backend tests:
+- 梦境不存在或不属于当前用户：返回 404。
+- 报告不存在或不属于当前用户：返回 404。
+- 模型服务不可用：报告变为 `failed`。
+- 模型返回 JSON 非法：报告变为 `failed`。
+- 当前梦境缺少 embedding：降级使用近期梦境上下文。
+- 没有历史梦境：仍然生成以当前梦为主的报告，并说明历史上下文有限。
 
-- A user cannot create a report for another user's dream.
-- Creating a report returns a `pending` report.
-- Successful task execution stores a completed report with required result fields.
-- Failed task execution stores `failed` and a safe error message.
-- Latest endpoint returns the latest completed report.
-- Similar dream retrieval only includes the current user's dreams.
-- Similar dream retrieval excludes the current dream.
-- Missing embedding falls back to recent dream context.
+## 测试
 
-Frontend tests:
+后端测试：
 
-- Dream detail page shows the deep-analysis entry point when no report exists.
-- Pending/running reports show progress state.
-- Completed reports render all sections.
-- Failed reports show retry.
-- Regenerate creates a new report request.
+- 用户不能为别人的梦境创建报告。
+- 创建报告后返回 `pending` 状态。
+- 任务成功后保存 `completed` 报告，并包含必填 result 字段。
+- 任务失败后保存 `failed` 状态和安全错误信息。
+- latest 接口返回最新完成报告。
+- 相似梦检索只包含当前用户自己的梦。
+- 相似梦检索会排除当前梦本身。
+- 缺少 embedding 时会降级到近期梦境上下文。
 
-## Implementation Order
+前端测试：
 
-Recommended sequence:
+- 梦境详情页在没有报告时显示深度分析入口。
+- `pending/running` 报告显示生成中状态。
+- `completed` 报告展示所有章节。
+- `failed` 报告展示重试入口。
+- 重新分析会发起新的报告创建请求。
 
-1. Add backend model and schemas.
-2. Add dream memory retrieval helpers.
-3. Add workflow orchestration service.
-4. Add Celery task.
-5. Add API endpoints.
-6. Add backend tests.
-7. Add frontend API client types and methods.
-8. Add report panel to dream detail page.
-9. Add frontend tests.
+## 实施顺序
 
-## Acceptance Criteria
+推荐顺序：
 
-The design is complete when:
+1. 新增后端模型和 schemas。
+2. 新增 dream memory 检索工具。
+3. 新增工作流编排服务。
+4. 新增 Celery 任务。
+5. 新增 API 接口。
+6. 补后端测试。
+7. 新增前端 API client 类型和方法。
+8. 在梦境详情页加入报告面板。
+9. 补前端测试。
 
-- A user can manually request a deep analysis for one of their dreams.
-- The system creates and tracks an agent report.
-- The workflow retrieves current dream context, same-user similar dreams, and recent dream trends.
-- The AI output is saved as a structured mixed-format report.
-- The dream detail page displays completed reports.
-- The user can retry after failure.
-- The user can regenerate a new report.
-- No other user's dreams are included in the report context.
+## 验收标准
+
+完成后应该满足：
+
+- 用户可以手动为自己的某条梦境请求深度分析。
+- 系统会创建并跟踪 agent report。
+- 工作流会读取当前梦境、同用户历史相似梦境和近期梦境趋势。
+- AI 输出会保存为结构化混合版报告。
+- 梦境详情页可以展示已完成报告。
+- 失败后用户可以重试。
+- 用户可以重新生成新报告。
+- 报告上下文不会包含其他用户的梦境。
