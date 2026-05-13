@@ -16,7 +16,7 @@
 - 自动周报或月报。
 - 外部心理学知识库或梦境符号库 RAG。
 - 社区梦境检索。
-- 多 agent 编排。
+- 真正独立运行的多 agent 编排。
 - 完全自主的规划循环。
 
 这些能力可以等第一版工作流稳定后再扩展。
@@ -276,6 +276,32 @@ app/api/v1/agent_reports.py
 - `agent_reports.py`：负责鉴权后的 API 入口。
 
 API 层保持轻薄，不在 API 里拼 prompt，也不在 API 里实现检索逻辑。
+
+## 多 Agent 演进路线
+
+第一版不实现真正独立运行的多 agent 编排，但设计上预留多 agent 角色边界。也就是说，第一版仍然由 `DreamAnalystWorkflow` 统一执行，但代码职责和 prompt 上下文要避免写死成一个不可拆分的大函数。
+
+未来可以拆成以下 agent 角色：
+
+- `DreamAnalystCoordinator`：负责接收目标、控制流程、分配子任务、汇总结果。
+- `DreamMemoryAgent`：负责检索用户历史梦境、相似梦境和近期趋势。
+- `DreamInterpretationAgent`：负责分析当前梦境与历史梦境之间的心理、象征和情绪联系。
+- `DreamReportWriterAgent`：负责把分析结果写成温柔、结构化、适合用户阅读的报告。
+- `DreamSafetyAgent`：负责检查输出是否过度诊断、是否包含心理健康风险表达、是否需要温和免责声明。
+
+第一版的实现映射：
+
+```text
+DreamAnalystWorkflow
+-> 执行 Coordinator 的流程控制职责
+-> 调用 dream_memory 工具承担 MemoryAgent 职责
+-> 通过模型 prompt 承担 InterpretationAgent 和 ReportWriterAgent 职责
+-> 通过结果校验和安全约束承担 SafetyAgent 的基础职责
+```
+
+第二版再考虑拆成可独立调用的 agent 节点。届时可以让 `DreamMemoryAgent` 和 `DreamInterpretationAgent` 并行执行，`DreamAnalystCoordinator` 汇总后交给 `DreamReportWriterAgent`，最后由 `DreamSafetyAgent` 做输出检查。
+
+这个设计让第一版保留清晰边界，同时避免一开始就引入多 agent 调度、并发状态、跨 agent 消息协议和调试成本。
 
 ## 工作流
 
