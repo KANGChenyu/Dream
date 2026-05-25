@@ -7,6 +7,8 @@ import {
 } from "react-router-dom";
 import type { ReactNode } from "react";
 
+import { AgentPage } from "./agent/AgentPage";
+import { RunDetailPage } from "./agent/RunDetailPage";
 import { ArchivePage } from "./archive/ArchivePage";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { LoginPage } from "./auth/LoginPage";
@@ -86,6 +88,22 @@ function AppRoutes() {
             </ProtectedRoute>
           }
           path="/record"
+        />
+        <Route
+          element={
+            <ProtectedRoute>
+              <AgentPage />
+            </ProtectedRoute>
+          }
+          path="/agent"
+        />
+        <Route
+          element={
+            <ProtectedRoute>
+              <RunDetailPage />
+            </ProtectedRoute>
+          }
+          path="/agent/runs/:id"
         />
         <Route element={<Navigate replace to="/" />} path="*" />
       </Routes>

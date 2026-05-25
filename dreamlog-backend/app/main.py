@@ -13,6 +13,7 @@ from app.core.config import get_settings
 from app.api.v1.auth import router as auth_router
 from app.api.v1.dreams import router as dreams_router
 from app.api.v1.community import router as community_router
+from app.api.v1.agent import router as agent_router
 
 settings = get_settings()
 Path(settings.generated_image_dir).mkdir(parents=True, exist_ok=True)
@@ -56,6 +57,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix=settings.api_v1_prefix)
 app.include_router(dreams_router, prefix=settings.api_v1_prefix)
 app.include_router(community_router, prefix=settings.api_v1_prefix)
+app.include_router(agent_router, prefix=settings.api_v1_prefix)
 app.mount(
     settings.generated_image_url_prefix,
     StaticFiles(directory=settings.generated_image_dir),

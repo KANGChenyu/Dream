@@ -2018,3 +2018,41 @@ button:disabled {
     width: 100%;
   }
 }
+.agent-workspace {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr) minmax(260px, 360px);
+  gap: 16px;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.agent-sidebar,
+.agent-chat-panel,
+.agent-evidence-panel,
+.agent-panel,
+.agent-final-card,
+.agent-chat-box {
+  min-width: 0;
+}
+
+.agent-chat-box {
+  display: grid;
+  gap: 12px;
+}
+
+.agent-chat-box textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.agent-timeline {
+  display: grid;
+  gap: 10px;
+  padding-left: 20px;
+}
+
+@media (max-width: 960px) {
+  .agent-workspace {
+    grid-template-columns: 1fr;
+  }
+}
