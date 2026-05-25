@@ -2040,6 +2040,21 @@ button:disabled {
   gap: 12px;
 }
 
+.agent-dream-selector {
+  display: grid;
+  gap: 12px;
+}
+
+.agent-dream-selector label {
+  display: grid;
+  gap: 6px;
+}
+
+.agent-dream-selector select,
+.agent-dream-selector input {
+  width: 100%;
+}
+
 .agent-chat-box textarea {
   min-height: 140px;
   resize: vertical;
