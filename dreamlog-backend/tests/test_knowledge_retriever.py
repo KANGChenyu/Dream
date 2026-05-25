@@ -154,3 +154,14 @@ async def test_retrieve_knowledge_from_db_returns_evidence():
 
     assert evidence[0]["source_title"] == "Water"
     assert evidence[0]["source_type"] == "symbolism"
+
+
+@pytest.mark.asyncio
+async def test_retrieve_knowledge_from_db_eager_loads_documents():
+    from app.rag.retrievers.knowledge_retriever import retrieve_knowledge_from_db
+
+    db = FakeKnowledgeQuerySession([])
+
+    await retrieve_knowledge_from_db(db, "water", top_k=1)
+
+    assert db.statement._with_options

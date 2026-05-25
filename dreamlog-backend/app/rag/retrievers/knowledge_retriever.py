@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.knowledge import KnowledgeChunk
 
@@ -60,6 +61,6 @@ def evidence_from_knowledge_chunks(query: str, chunks: list, top_k: int = 5) -> 
 
 
 async def retrieve_knowledge_from_db(db: AsyncSession, query: str, top_k: int = 5) -> list[dict]:
-    result = await db.execute(select(KnowledgeChunk).limit(200))
+    result = await db.execute(select(KnowledgeChunk).options(selectinload(KnowledgeChunk.document)).limit(200))
     chunks = list(result.scalars().all())
     return evidence_from_knowledge_chunks(query, chunks, top_k=top_k)
