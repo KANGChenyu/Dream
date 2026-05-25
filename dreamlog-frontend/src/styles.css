@@ -2066,6 +2066,48 @@ button:disabled {
   padding-left: 20px;
 }
 
+.agent-provider-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin: 8px 0 12px;
+}
+
+.agent-provider-meta dt {
+  color: var(--dream-muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.agent-provider-meta dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.agent-fallback-note,
+.agent-evidence-meta {
+  color: var(--dream-muted);
+  font-size: 0.9rem;
+}
+
+.agent-evidence-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.agent-evidence-meta span {
+  border: 1px solid rgba(131, 116, 86, 0.24);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.agent-fallback-note {
+  border-left: 3px solid rgba(214, 163, 84, 0.72);
+  padding-left: 10px;
+}
+
 @media (max-width: 960px) {
   .agent-workspace {
     grid-template-columns: 1fr;
