@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.core.context import RunContext
 from app.agent.dream_agents.critic import CriticAgent
-from app.agent.dream_agents.interpreter import InterpreterAgent
+from app.agent.dream_agents.interpreter import ProviderInterpreterAgent
 from app.agent.dream_agents.knowledge_retriever import KnowledgeRetrieverAgent
 from app.agent.dream_agents.memory_retriever import MemoryRetrieverAgent
 from app.agent.dream_agents.planner import PlannerAgent
@@ -65,7 +65,7 @@ class AgentOrchestrator:
             agents = [
                 KnowledgeRetrieverAgent(db=self.db),
                 MemoryRetrieverAgent(self.db),
-                InterpreterAgent(),
+                ProviderInterpreterAgent(),
                 CriticAgent(),
             ]
             final_output = {"plan": planner_result.output}
