@@ -1,6 +1,11 @@
 import re
 from dataclasses import dataclass
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.knowledge import KnowledgeChunk
+
 
 @dataclass(frozen=True)
 class KnowledgeRecord:
@@ -38,3 +43,23 @@ def retrieve_knowledge(query: str, records: list[KnowledgeRecord], top_k: int = 
         }
         for score, record in scored[:top_k]
     ]
+
+
+def evidence_from_knowledge_chunks(query: str, chunks: list, top_k: int = 5) -> list[dict]:
+    records = [
+        KnowledgeRecord(
+            source_title=chunk.document.title,
+            source_type=chunk.document.source_type,
+            content=chunk.content,
+            source_path=chunk.document.source_path or "",
+        )
+        for chunk in chunks
+        if getattr(chunk, "document", None) is not None
+    ]
+    return retrieve_knowledge(query, records, top_k=top_k)
+
+
+async def retrieve_knowledge_from_db(db: AsyncSession, query: str, top_k: int = 5) -> list[dict]:
+    result = await db.execute(select(KnowledgeChunk).limit(200))
+    chunks = list(result.scalars().all())
+    return evidence_from_knowledge_chunks(query, chunks, top_k=top_k)

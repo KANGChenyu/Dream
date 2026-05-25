@@ -3,16 +3,22 @@ from pathlib import Path
 from app.agent.core.base import BaseAgent
 from app.agent.core.context import RunContext
 from app.agent.core.types import AgentResult
-from app.rag.retrievers.knowledge_retriever import retrieve_knowledge
+from app.rag.retrievers.knowledge_retriever import (
+    KnowledgeRecord,
+    retrieve_knowledge,
+    retrieve_knowledge_from_db,
+)
 from app.rag.services.index_service import build_knowledge_records
 
 
 class KnowledgeRetrieverAgent(BaseAgent):
     name = "KnowledgeRetrieverAgent"
 
+    def __init__(self, records: list[KnowledgeRecord] | None = None, db=None):
+        self.records = records
+        self.db = db
+
     async def run(self, context: RunContext) -> AgentResult:
-        knowledge_root = Path(__file__).resolve().parents[4] / "docs" / "knowledge"
-        records = build_knowledge_records(knowledge_root) if knowledge_root.exists() else []
         query = " ".join(
             part
             for part in [
@@ -21,7 +27,15 @@ class KnowledgeRetrieverAgent(BaseAgent):
             ]
             if part
         )
-        evidence = retrieve_knowledge(query, records, top_k=5)
+
+        if self.db is not None:
+            evidence = await retrieve_knowledge_from_db(self.db, query, top_k=5)
+        else:
+            records = self.records
+            if records is None:
+                knowledge_root = Path(__file__).resolve().parents[4] / "docs" / "knowledge"
+                records = build_knowledge_records(knowledge_root) if knowledge_root.exists() else []
+            evidence = retrieve_knowledge(query, records, top_k=5)
 
         if not evidence:
             evidence = [

@@ -63,7 +63,7 @@ class AgentOrchestrator:
             run.error_message = planner_result.error_message
         else:
             agents = [
-                KnowledgeRetrieverAgent(),
+                KnowledgeRetrieverAgent(db=self.db),
                 MemoryRetrieverAgent(self.db),
                 InterpreterAgent(),
                 CriticAgent(),
