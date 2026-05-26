@@ -7,10 +7,16 @@ import {
 } from "react-router-dom";
 import type { ReactNode } from "react";
 
+import { AgentPage } from "./agent/AgentPage";
+import { RunDetailPage } from "./agent/RunDetailPage";
+import { ArchivePage } from "./archive/ArchivePage";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { LoginPage } from "./auth/LoginPage";
+import { CommunityPage } from "./community/CommunityPage";
 import { DreamDetailPage } from "./dreams/DreamDetailPage";
 import { DreamWorkspace } from "./dreams/DreamWorkspace";
+import { MatchingPage } from "./matching/MatchingPage";
+import { RecordPage } from "./record/RecordPage";
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -42,6 +48,62 @@ function AppRoutes() {
             </ProtectedRoute>
           }
           path="/dreams/:id"
+        />
+        <Route
+          element={
+            <ProtectedRoute>
+              <DreamDetailPage source="community" />
+            </ProtectedRoute>
+          }
+          path="/community/dreams/:id"
+        />
+        <Route
+          element={
+            <ProtectedRoute>
+              <CommunityPage />
+            </ProtectedRoute>
+          }
+          path="/community"
+        />
+        <Route
+          element={
+            <ProtectedRoute>
+              <MatchingPage />
+            </ProtectedRoute>
+          }
+          path="/matching"
+        />
+        <Route
+          element={
+            <ProtectedRoute>
+              <ArchivePage />
+            </ProtectedRoute>
+          }
+          path="/archive"
+        />
+        <Route
+          element={
+            <ProtectedRoute>
+              <RecordPage />
+            </ProtectedRoute>
+          }
+          path="/record"
+        />
+        <Route
+          element={
+            <ProtectedRoute>
+              <AgentPage />
+            </ProtectedRoute>
+          }
+          path="/agent"
+        />
+        <Route
+          element={
+            <ProtectedRoute>
+              <RunDetailPage />
+            </ProtectedRoute>
+          }
+          path="/agent/runs/:id"
         />
         <Route element={<Navigate replace to="/" />} path="*" />
       </Routes>

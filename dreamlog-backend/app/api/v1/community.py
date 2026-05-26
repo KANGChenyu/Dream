@@ -7,6 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc, exists
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.deps import get_current_user, get_current_user_optional
@@ -17,8 +18,13 @@ from app.schemas.community import (
     CommentCreateRequest, CommentResponse,
     FeedItemResponse, FeedResponse,
 )
+from app.schemas.dream import DreamResponse
 
 router = APIRouter(prefix="/community", tags=["社区"])
+
+
+def _to_public_dream_response(dream: Dream) -> DreamResponse:
+    return DreamResponse.model_validate(dream).model_copy(update={"interpretation": None})
 
 
 @router.get("/feed", response_model=FeedResponse)
@@ -31,7 +37,7 @@ async def get_feed(
     user: Optional[User] = Depends(get_current_user_optional),
 ):
     """获取社区梦境 Feed"""
-    query = select(Dream).where(Dream.is_public == True)
+    query = select(Dream).options(selectinload(Dream.user)).where(Dream.is_public == True)
 
     # 标签筛选
     if tag:
@@ -111,6 +117,21 @@ async def get_trending(
         page=1, page_size=page_size, sort="hot",
         tag=None, db=db, user=user,
     )
+
+
+@router.get("/dreams/{dream_id}", response_model=DreamResponse)
+async def get_public_dream(
+    dream_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """获取公开梦境详情"""
+    result = await db.execute(
+        select(Dream).where(Dream.id == dream_id, Dream.is_public == True)
+    )
+    dream = result.scalar_one_or_none()
+    if not dream:
+        raise HTTPException(status_code=404, detail="梦境不存在")
+    return _to_public_dream_response(dream)
 
 
 @router.post("/dreams/{dream_id}/like")

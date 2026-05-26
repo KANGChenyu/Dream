@@ -1,4 +1,7 @@
 import json
+import hashlib
+import math
+import re
 from typing import Optional
 
 import httpx
@@ -7,6 +10,7 @@ from app.core.config import get_settings
 from app.services.ai.base import BaseDreamInterpreter, InterpretResult
 
 settings = get_settings()
+CJK_RE = re.compile(r"[\u4e00-\u9fff]")
 
 PRODUCT_INTERPRET_PROMPT = """你是一位专业的梦境分析师，同时精通荣格心理学、弗洛伊德释梦理论和东西方梦境文化。
 
@@ -118,4 +122,31 @@ class DeepSeekInterpreter(BaseDreamInterpreter):
         )
 
     async def generate_embedding(self, dream_content: str) -> list[float]:
-        return []
+        normalized = dream_content.lower()
+        cjk_chars = CJK_RE.findall(normalized)
+        tokens = re.findall(r"[a-z0-9_]+", normalized)
+
+        if cjk_chars:
+            tokens.extend(cjk_chars)
+            tokens.extend(
+                "".join(cjk_chars[index : index + size])
+                for size in (2, 3)
+                for index in range(0, max(len(cjk_chars) - size + 1, 0))
+            )
+
+        if not tokens:
+            tokens = list(normalized)
+
+        vector = [0.0] * 1536
+        for token in tokens:
+            digest = hashlib.sha256(token.encode("utf-8")).digest()
+            index = int.from_bytes(digest[:4], "big") % len(vector)
+            weight = 1.0 + min(len(token), 4) * 0.15
+            vector[index] += weight
+
+        magnitude = math.sqrt(sum(value * value for value in vector))
+        if magnitude == 0:
+            vector[0] = 1.0
+            return vector
+
+        return [value / magnitude for value in vector]

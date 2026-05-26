@@ -1,3 +1,6 @@
 .superpowers/
 .worktrees/
 worktrees/
+.codex-run/
+dreamlog-frontend/.env.local
+dreamlog-backend/storage/

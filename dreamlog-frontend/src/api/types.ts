@@ -42,6 +42,7 @@ export interface UserUpdateRequest {
 }
 
 export interface DreamCreateRequest {
+  title?: string | null;
   content: string;
   dream_date: string;
   mood?: Mood | null;
@@ -49,6 +50,7 @@ export interface DreamCreateRequest {
   is_lucid: boolean;
   is_public: boolean;
   is_anonymous: boolean;
+  tags?: string[];
 }
 
 export interface DreamUpdateRequest {

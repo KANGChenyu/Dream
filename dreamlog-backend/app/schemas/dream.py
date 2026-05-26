@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 # ===== 请求 =====
 
 class DreamCreateRequest(BaseModel):
+    title: Optional[str] = Field(None, max_length=100)
     content: str = Field(..., min_length=10, max_length=5000, description="梦境描述")
     dream_date: date = Field(..., description="做梦日期")
     mood: Optional[str] = Field(None, pattern=r"^(calm|happy|anxious|scared|confused|sad)$")
@@ -16,6 +17,7 @@ class DreamCreateRequest(BaseModel):
     is_lucid: bool = False
     is_public: bool = False
     is_anonymous: bool = True
+    tags: list[str] = Field(default_factory=list, max_length=12)
 
 
 class DreamUpdateRequest(BaseModel):
@@ -24,6 +26,10 @@ class DreamUpdateRequest(BaseModel):
     clarity: Optional[int] = Field(None, ge=1, le=5)
     is_public: Optional[bool] = None
     is_anonymous: Optional[bool] = None
+
+
+class DreamPublishRequest(BaseModel):
+    is_anonymous: bool = False
 
 
 class GenerateImageRequest(BaseModel):

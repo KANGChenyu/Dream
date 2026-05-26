@@ -2,23 +2,44 @@
 梦境 CRUD + AI 解读/绘图 API
 """
 from datetime import date
+from pathlib import Path
 from typing import Optional
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
 
+from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.user import User
 from app.models.dream import Dream, DreamInterpretation, DreamTag
 from app.schemas.dream import (
     DreamCreateRequest, DreamUpdateRequest, DreamResponse,
-    DreamListResponse, GenerateImageRequest, DreamMatchResponse,
+    DreamListResponse, DreamPublishRequest, GenerateImageRequest, DreamMatchResponse,
 )
 from app.services.ai import get_interpreter, get_image_generator
 
+settings = get_settings()
 router = APIRouter(prefix="/dreams", tags=["梦境"])
+MATCH_SIMILARITY_THRESHOLD = 0.2
+
+
+async def _persist_generated_image(
+    dream_id: int,
+    image_data: bytes,
+    storage_dir: str | Path | None = None,
+) -> str:
+    if not image_data:
+        raise RuntimeError("AI 绘梦服务没有返回可保存的图片。")
+
+    target_dir = Path(storage_dir or settings.generated_image_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    filename = f"dream-{dream_id}-{uuid4().hex}.png"
+    (target_dir / filename).write_bytes(image_data)
+    return f"{settings.generated_image_url_prefix}/{filename}"
 
 
 @router.post("", response_model=DreamResponse, status_code=201)
@@ -30,6 +51,7 @@ async def create_dream(
     """创建梦境记录"""
     dream = Dream(
         user_id=user.id,
+        title=req.title.strip() if req.title else None,
         content=req.content,
         dream_date=req.dream_date,
         mood=req.mood,
@@ -40,6 +62,15 @@ async def create_dream(
     )
     db.add(dream)
     await db.flush()
+
+    seen_tags = set()
+    for raw_tag in req.tags:
+        tag = raw_tag.strip()
+        if not tag or tag in seen_tags:
+            continue
+        seen_tags.add(tag)
+        db.add(DreamTag(dream_id=dream.id, tag=tag[:30]))
+
     await db.refresh(dream)
     return DreamResponse.model_validate(dream)
 
@@ -137,6 +168,28 @@ async def delete_dream(
     await db.delete(dream)
 
 
+@router.post("/{dream_id}/publish", response_model=DreamResponse)
+async def publish_dream(
+    dream_id: int,
+    req: DreamPublishRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """发布梦境到社区"""
+    result = await db.execute(
+        select(Dream).where(Dream.id == dream_id, Dream.user_id == user.id)
+    )
+    dream = result.scalar_one_or_none()
+    if not dream:
+        raise HTTPException(status_code=404, detail="梦境不存在")
+
+    dream.is_public = True
+    dream.is_anonymous = req.is_anonymous
+    await db.flush()
+    await db.refresh(dream)
+    return DreamResponse.model_validate(dream)
+
+
 @router.post("/{dream_id}/interpret", response_model=DreamResponse)
 async def interpret_dream(
     dream_id: int,
@@ -185,6 +238,8 @@ async def interpret_dream(
     if interpret_result.title:
         dream.title = interpret_result.title
 
+    dream.embedding = await interpreter.generate_embedding(dream.content)
+
     # 保存标签
     for keyword in interpret_result.keywords:
         tag = DreamTag(dream_id=dream.id, tag=keyword)
@@ -210,16 +265,25 @@ async def generate_dream_image(
     if not dream:
         raise HTTPException(status_code=404, detail="梦境不存在")
 
-    generator = get_image_generator()
-    image_result = await generator.generate(
-        dream_content=dream.content,
-        mood=dream.mood,
-        style=req.style,
-    )
+    try:
+        generator = get_image_generator()
+        image_result = await generator.generate(
+            dream_content=dream.content,
+            mood=dream.mood,
+            style=req.style,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="AI 绘梦服务暂时不可用，请稍后重试。") from exc
 
-    # TODO: 将 image_data 上传到 OSS，获取永久 URL
-    # 暂时使用直接返回的 URL
-    dream.image_url = image_result.image_url
+    # TODO: replace local persistence with OSS and keep this endpoint contract.
+    dream.image_url = await _persist_generated_image(
+        dream_id=dream.id,
+        image_data=image_result.image_data,
+    )
     dream.image_style = image_result.style
 
     await db.flush()
@@ -266,7 +330,7 @@ async def get_dream_matches(
         similar_dream = row[0]
         distance = row[1]
         similarity = 1 - distance  # cosine_distance → similarity
-        if similarity > 0.7:  # 只返回相似度较高的
+        if similarity >= MATCH_SIMILARITY_THRESHOLD:
             matches.append(DreamMatchResponse(
                 dream=DreamResponse.model_validate(similar_dream),
                 similarity=round(similarity, 3),

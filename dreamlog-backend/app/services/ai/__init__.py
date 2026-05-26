@@ -24,6 +24,14 @@ def get_interpreter() -> BaseDreamInterpreter:
 def get_image_generator() -> BaseDreamImageGenerator:
     provider = settings.ai_image_provider.lower()
 
+    if provider in {"openai", "chatgpt", "gpt_image", "gpt-image"}:
+        from app.services.ai.dalle_generator import OpenAIImageGenerator
+
+        return OpenAIImageGenerator()
+    if provider.startswith("gpt-image") or provider.startswith("gpt_image"):
+        from app.services.ai.dalle_generator import OpenAIImageGenerator
+
+        return OpenAIImageGenerator(model=provider.replace("_", "-"))
     if provider == "dalle":
         from app.services.ai.dalle_generator import DalleGenerator
 

@@ -1,27 +1,23 @@
-"""
-DALL·E / Stable Diffusion 梦境绘图实现
-"""
+import base64
 from typing import Optional
 
-import openai
 import httpx
+import openai
 
 from app.core.config import get_settings
 from app.services.ai.base import BaseDreamImageGenerator, ImageResult
 
 settings = get_settings()
 
-# 情绪到色调的映射
 MOOD_PALETTE = {
-    "calm": "柔和的蓝紫色调，宁静的氛围",
-    "happy": "温暖的金色和橙色调，明亮欢快",
-    "anxious": "灰蓝冷色调，带有压迫感的光影",
-    "scared": "深暗色调，带有神秘和紧张的光影",
-    "confused": "朦胧混沌的色彩，模糊的边界",
-    "sad": "冷淡的蓝灰色调，细雨般的氛围",
+    "calm": "soft blue and violet palette, quiet and peaceful atmosphere",
+    "happy": "warm gold and orange palette, bright and joyful",
+    "anxious": "cool gray-blue palette, tense cinematic light",
+    "scared": "dark palette, mysterious and suspenseful light",
+    "confused": "hazy blended colors, blurred edges and shifting space",
+    "sad": "muted blue-gray palette, gentle rainlike mood",
 }
 
-# 风格到提示词的映射
 STYLE_PROMPTS = {
     "surreal_dreamlike": "surrealist style, soft dreamy lighting, ethereal atmosphere, floating elements, misty and otherworldly",
     "watercolor": "watercolor painting style, translucent washes, soft color blending, delicate brushstrokes, white paper showing through",
@@ -32,11 +28,33 @@ STYLE_PROMPTS = {
 }
 
 
-class DalleGenerator(BaseDreamImageGenerator):
-    """DALL·E 3 实现"""
+def _normalize_openai_base_url(base_url: Optional[str]) -> Optional[str]:
+    if not base_url:
+        return None
 
-    def __init__(self):
-        self.client = openai.AsyncOpenAI(api_key=settings.dalle_api_key or settings.openai_api_key)
+    clean_url = base_url.rstrip("/")
+    if clean_url.endswith("/v1"):
+        return clean_url
+    return f"{clean_url}/v1"
+
+
+class OpenAIImageGenerator(BaseDreamImageGenerator):
+    """OpenAI image generation implementation."""
+
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model: Optional[str] = None,
+        base_url: Optional[str] = None,
+        client: Optional[openai.AsyncOpenAI] = None,
+    ):
+        self.api_key = api_key or settings.openai_api_key or settings.dalle_api_key
+        self.model = model or settings.openai_image_model
+        self.base_url = _normalize_openai_base_url(base_url or settings.openai_base_url)
+        self.client = client or openai.AsyncOpenAI(
+            api_key=self.api_key or "missing-key",
+            base_url=self.base_url,
+        )
 
     async def generate(
         self,
@@ -44,43 +62,61 @@ class DalleGenerator(BaseDreamImageGenerator):
         mood: Optional[str] = None,
         style: str = "surreal_dreamlike",
     ) -> ImageResult:
+        if not self.api_key or self.api_key.startswith("your-"):
+            raise RuntimeError("请先在 .env 中配置 OPENAI_API_KEY，再生成 AI 绘梦。")
+
         mood_hint = MOOD_PALETTE.get(mood, "mysterious and dreamlike atmosphere")
         style_hint = STYLE_PROMPTS.get(style, STYLE_PROMPTS["surreal_dreamlike"])
-
         prompt = (
             f"Create an artistic dream scene based on this dream description: {dream_content[:500]}. "
             f"Art style: {style_hint}. "
             f"Color mood: {mood_hint}. "
-            f"The image should feel like a dream - ethereal, slightly unreal, with a sense of wonder. "
-            f"No text, no watermarks, no borders."
+            "The image should feel like a dream - ethereal, slightly unreal, with a sense of wonder. "
+            "No text, no watermarks, no borders."
         )
 
         response = await self.client.images.generate(
-            model="dall-e-3",
+            model=self.model,
             prompt=prompt,
             size="1024x1024",
-            quality="standard",
             n=1,
         )
 
-        image_url = response.data[0].url
+        image = response.data[0]
+        b64_json = getattr(image, "b64_json", None)
+        if b64_json:
+            image_data = base64.b64decode(b64_json)
+            image_url = f"data:image/png;base64,{b64_json}"
+        else:
+            image_url = getattr(image, "url", None)
+            if not image_url:
+                raise RuntimeError("AI 绘梦服务没有返回可用图片。")
 
-        # 下载图片数据（后续上传到 OSS）
-        async with httpx.AsyncClient() as http_client:
-            img_response = await http_client.get(image_url)
-            image_data = img_response.content
+            async with httpx.AsyncClient() as http_client:
+                img_response = await http_client.get(image_url)
+                image_data = img_response.content
 
         return ImageResult(
             image_url=image_url,
             image_data=image_data,
-            provider="dalle",
-            model="dall-e-3",
+            provider="openai",
+            model=self.model,
             style=style,
         )
 
 
+class DalleGenerator(OpenAIImageGenerator):
+    """Legacy DALL-E provider name."""
+
+    def __init__(self):
+        super().__init__(
+            api_key=settings.dalle_api_key or settings.openai_api_key,
+            model="dall-e-3",
+        )
+
+
 class SDGenerator(BaseDreamImageGenerator):
-    """Stable Diffusion API 实现（兼容 A1111 WebUI API）"""
+    """Stable Diffusion implementation compatible with A1111 WebUI API."""
 
     def __init__(self):
         self.api_url = settings.sd_api_url
@@ -92,8 +128,6 @@ class SDGenerator(BaseDreamImageGenerator):
         mood: Optional[str] = None,
         style: str = "surreal_dreamlike",
     ) -> ImageResult:
-        import base64
-
         mood_hint = MOOD_PALETTE.get(mood, "mysterious dreamlike")
         style_hint = STYLE_PROMPTS.get(style, STYLE_PROMPTS["surreal_dreamlike"])
 
@@ -101,7 +135,7 @@ class SDGenerator(BaseDreamImageGenerator):
             f"masterpiece, best quality, {style_hint}, "
             f"dream scene, {dream_content[:300]}, "
             f"{mood_hint}, "
-            f"highly detailed, 8k resolution"
+            "highly detailed, 8k resolution"
         )
         negative_prompt = (
             "text, watermark, logo, signature, ugly, deformed, "
@@ -128,7 +162,7 @@ class SDGenerator(BaseDreamImageGenerator):
         image_data = base64.b64decode(result["images"][0])
 
         return ImageResult(
-            image_url="",  # 需要上传 OSS 后填充
+            image_url="",
             image_data=image_data,
             provider="stable_diffusion",
             model=self.model,
